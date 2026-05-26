@@ -53,7 +53,7 @@ const Divider = ({ className }: { className?: string }) => (
     )}
   >
     <span className="h-px flex-1 bg-linear-to-r from-transparent to-[#c39150]" />
-    <span className="size-2 rotate-45 bg-[#c39150]" />
+    <span className="size-2 rotate-45 bg-[#C39150]" />
     <span className="h-px flex-1 bg-linear-to-l from-transparent to-[#c39150]" />
   </div>
 )
@@ -177,10 +177,10 @@ const Reviews = () => {
             ))}
           </CarouselContent>
 
-          <CarouselPrevious className="left-0 top-1/2 z-10 size-9 -translate-y-1/2 border-0 bg-[#3f2617] text-white shadow-lg hover:bg-[#c39150] hover:text-white disabled:opacity-100 sm:-left-16 sm:size-16">
+          <CarouselPrevious className="left-0 top-1/2 z-10 size-9 -translate-y-1/2 border-0 bg-[#3F2617] text-white shadow-lg hover:bg-[#C39150] hover:text-white disabled:opacity-100 sm:-left-16 sm:size-16">
             <ChevronLeft className="size-5 sm:size-8" />
           </CarouselPrevious>
-          <CarouselNext className="right-0 top-1/2 z-10 size-9 -translate-y-1/2 border-0 bg-[#3f2617] text-white shadow-lg hover:bg-[#c39150] hover:text-white disabled:opacity-100 sm:-right-16 sm:size-16">
+          <CarouselNext className="right-0 top-1/2 z-10 size-9 -translate-y-1/2 border-0 bg-[#3F2617] text-white shadow-lg hover:bg-[#C39150] hover:text-white disabled:opacity-100 sm:-right-16 sm:size-16">
             <ChevronRight className="size-5 sm:size-8" />
           </CarouselNext>
         </Carousel>
@@ -193,7 +193,7 @@ const Reviews = () => {
               aria-label={`Go to review ${index + 1}`}
               onClick={() => api?.scrollTo(index)}
               className={cn(
-                "h-2 rounded-full bg-[#c39150] transition-all",
+                "h-2 rounded-full bg-[#C39150] transition-all",
                 selectedIndex === index ? "w-7" : "w-2 opacity-80"
               )}
             />

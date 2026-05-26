@@ -1,33 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
-const products = [
-  {
-    name: "Lagdi Patta Dupata",
-    price: "₹1,850.00",
-    image: "/home/new-arrival-model.png",
-  },
-  {
-    name: "Lagdi Patta Saree",
-    price: "₹1,850.00",
-    image: "/home/gottpatti.png",
-  },
-  {
-    name: "Jaal Chunri With Pittan Work",
-    price: "₹1,850.00",
-    image: "/home/zardozi.png",
-  },
-  {
-    name: "Radiant Peal Satin Tissue Saree",
-    price: "₹1,850.00",
-    image: "/home/shrug.png",
-  },
-  {
-    name: "Lagdi Patta Dupata",
-    price: "₹1,850.00",
-    image: "/home/belbuti.png",
-  },
-]
+import { formatPrice, products } from "@/components/global/const"
 
 const Trending = () => {
   return (
@@ -63,7 +37,7 @@ const Trending = () => {
                     {product.name}
                 </h3>
                 <p className="mt-1 text-xs font-medium text-[#1d130f] sm:mt-2 sm:text-sm">
-                    {product.price}
+                    {formatPrice(product.price)}
                 </p>
                 </Link>
             ))}

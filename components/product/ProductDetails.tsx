@@ -3,9 +3,22 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Heart, Share2 } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Minus,
+  Plus,
+  Share2,
+  Trash2,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { useAddToCart } from "@/hooks/useAddToCart"
+import { useWishlist } from "@/hooks/useWishlist"
+import { useCartStore } from "@/store/cartStore"
+import { useWishlistStore } from "@/store/wishlistStore"
+import type { CartItemInput } from "@/store/cartTypes"
 
 const colors = [
   {
@@ -52,6 +65,11 @@ const galleryImages = [
 const breadcrumbs = ["Home", "Categories", "Products", "Product Details"]
 
 const ProductDetails = () => {
+  const { handleAddToCart } = useAddToCart()
+  const { handleToggleWishlist } = useWishlist()
+  const increase = useCartStore((state) => state.increase)
+  const decrease = useCartStore((state) => state.decrease)
+  const removeItem = useCartStore((state) => state.removeItem)
   const [selectedColor, setSelectedColor] = useState(colors[0])
   const [selectedGalleryImage, setSelectedGalleryImage] = useState<
     (typeof galleryImages)[number] | null
@@ -60,6 +78,32 @@ const ProductDetails = () => {
   const displayedAlt =
     selectedGalleryImage?.alt ??
     `Traditional Bandhej Saree in ${selectedColor.name}`
+  const cartItem: CartItemInput = {
+    productId: "traditional-bandhej-saree",
+    title: "Tradational Bandhej Saree with Lagdi Patta Saree",
+    price: 4850,
+    image: selectedColor.mainImage,
+    colour: selectedColor.name,
+    imageClass: "object-top",
+    attributes: [
+      { name: "Colour", value: selectedColor.name },
+      { name: "Fabric", value: "Silk" },
+      { name: "Size", value: "Saree 5.5 mtr with Blouse 0.8 mtr" },
+    ],
+  }
+  const cartQuantity = useCartStore(
+    (state) =>
+      state.items.find(
+        (item) =>
+          item.productId === cartItem.productId &&
+          JSON.stringify(item.attributes ?? []) ===
+            JSON.stringify(cartItem.attributes ?? [])
+      )?.quantity ?? 0
+  )
+  const isInCart = cartQuantity > 0
+  const isWishlisted = useWishlistStore((state) =>
+    state.items.some((item) => item.productId === cartItem.productId)
+  )
 
   return (
     <section className="bg-white pb-14 pt-24 text-[#111] md:pt-20">
@@ -202,9 +246,27 @@ const ProductDetails = () => {
             </div>
 
             <div className="mt-6 grid gap-2">
-              <Button className="h-12 rounded-none bg-[#c39150] text-sm font-semibold text-white hover:bg-[#3f2617]">
-                Add to cart
-              </Button>
+              {isInCart ? (
+                <ProductQuantityControls
+                  quantity={cartQuantity}
+                  onDecrease={() =>
+                    decrease(cartItem.productId, cartItem.attributes)
+                  }
+                  onIncrease={() =>
+                    increase(cartItem.productId, cartItem.attributes)
+                  }
+                  onRemove={() =>
+                    removeItem(cartItem.productId, cartItem.attributes)
+                  }
+                />
+              ) : (
+                <Button
+                  onClick={() => handleAddToCart(cartItem)}
+                  className="h-12 rounded-none bg-[#c39150] text-sm font-semibold text-white hover:bg-[#3f2617]"
+                >
+                  Add to cart
+                </Button>
+              )}
               <Button className="h-12 rounded-none bg-[#3f2617] text-sm font-semibold text-white hover:bg-[#c39150]">
                 Buy Now
               </Button>
@@ -213,10 +275,14 @@ const ProductDetails = () => {
             <div className="mt-6 grid grid-cols-2 gap-4">
               <Button
                 variant="outline"
+                onClick={() => handleToggleWishlist(cartItem)}
                 className="h-12 rounded-none border-[#d8b278] bg-white text-sm font-medium text-[#3f2617] hover:bg-[#fbf3ea]"
               >
-                <Heart className="size-4 text-[#c39150]" />
-                Add to Wishlist
+                <Heart
+                  className="size-4 text-[#c39150]"
+                  fill={isWishlisted ? "currentColor" : "none"}
+                />
+                {isWishlisted ? "Remove Wishlist" : "Add to Wishlist"}
               </Button>
               <Button
                 variant="outline"
@@ -230,6 +296,50 @@ const ProductDetails = () => {
         </div>
       </div>
     </section>
+  )
+}
+
+function ProductQuantityControls({
+  quantity,
+  onDecrease,
+  onIncrease,
+  onRemove,
+}: {
+  quantity: number
+  onDecrease: () => void
+  onIncrease: () => void
+  onRemove: () => void
+}) {
+  return (
+    <div className="grid h-12 grid-cols-[52px_1fr_52px_52px] overflow-hidden border border-[#c39150] bg-white text-[#3f2617]">
+      <button
+        type="button"
+        aria-label="Decrease quantity"
+        onClick={onDecrease}
+        className="flex items-center justify-center border-r border-[#c39150]/35 text-[#c39150]"
+      >
+        <Minus className="size-4" />
+      </button>
+      <span className="flex items-center justify-center text-sm font-semibold">
+        Quantity {quantity}
+      </span>
+      <button
+        type="button"
+        aria-label="Increase quantity"
+        onClick={onIncrease}
+        className="flex items-center justify-center border-l border-[#c39150]/35 text-[#c39150]"
+      >
+        <Plus className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="Remove from cart"
+        onClick={onRemove}
+        className="flex items-center justify-center bg-red-50 text-red-500"
+      >
+        <Trash2 className="size-4" />
+      </button>
+    </div>
   )
 }
 

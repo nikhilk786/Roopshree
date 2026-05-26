@@ -3,8 +3,25 @@
 import { useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Heart } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Minus,
+  Plus,
+  Trash2,
+} from "lucide-react"
 import { ShopMobileFilters } from "./ShopFilters"
+import {
+  formatPrice,
+  productToCartItem,
+  shopProducts,
+  type Product,
+} from "@/components/global/const"
+import { useAddToCart } from "@/hooks/useAddToCart"
+import { useWishlist } from "@/hooks/useWishlist"
+import { useCartStore } from "@/store/cartStore"
+import { useWishlistStore } from "@/store/wishlistStore"
 
 const categories = [
   { name: "Shrug", image: "/home/shrug.png" },
@@ -14,45 +31,6 @@ const categories = [
   { name: "Zardozi", image: "/home/zardozi.png" },
   { name: "Gottapatti", image: "/home/gottapatti.png" },
   { name: "Zardozi", image: "/home/zardozi.png" },
-]
-
-type Product = {
-  id: number
-  name: string
-  price: string
-  image: string
-  imageClass: string
-}
-
-const productDetails: Product[] = [
-  {
-    id: 1,
-    name: "Lagdi Patta Dupata",
-    price: "₹1,850.00",
-    image: "/shop/sm-shop_bg.png",
-    imageClass: "object-[50%_58%]",
-  },
-  {
-    id: 2,
-    name: "Lagdi Patta Saree",
-    price: "₹1,850.00",
-    image: "/shop/sm-shop_bg.png",
-    imageClass: "object-[55%_55%]",
-  },
-  {
-    id: 3,
-    name: "Jaal Chunri With Pittan Work",
-    price: "₹1,850.00",
-    image: "/shop/shop_bg.png",
-    imageClass: "object-[68%_58%]",
-  },
-  {
-    id: 4,
-    name: "Radiant Peal Satin Tissue Saree",
-    price: "₹1,850.00",
-    image: "/shop/shop_bg.png",
-    imageClass: "object-[82%_50%]",
-  },
 ]
 
 const pageSize = 12
@@ -67,7 +45,7 @@ export default function ShopProducts() {
     const start = (currentPage - 1) * pageSize
     return Array.from({ length: pageSize }, (_, index) => {
       const id = start + index + 1
-      const source = productDetails[(id - 1) % productDetails.length]
+      const source = shopProducts[(id - 1) % shopProducts.length]
       return {
         ...source,
         id,
@@ -155,7 +133,7 @@ export default function ShopProducts() {
             onClick={() => goToPage(page)}
             className={`size-6 rounded-[2px] border text-xs ${
               page === currentPage
-                ? "border-[#c39150] bg-[#c39150] text-white"
+                ? "border-[#c39150] bg-[#C39150] text-white"
                 : "border-[#d8a15a] bg-white text-[#3F2617]"
             }`}
           >
@@ -168,7 +146,7 @@ export default function ShopProducts() {
           onClick={() => goToPage(totalPages)}
           className={`h-6 min-w-7 rounded-[2px] border px-1 ${
             currentPage === totalPages
-              ? "border-[#c39150] bg-[#c39150] text-white"
+              ? "border-[#c39150] bg-[#C39150] text-white"
               : "border-[#d8a15a] bg-white text-[#3F2617]"
           }`}
         >
@@ -220,6 +198,26 @@ function SortControl({
 }
 
 function ProductCard({ product }: { product: Product }) {
+  const { handleAddToCart } = useAddToCart()
+  const { handleToggleWishlist } = useWishlist()
+  const increase = useCartStore((state) => state.increase)
+  const decrease = useCartStore((state) => state.decrease)
+  const removeItem = useCartStore((state) => state.removeItem)
+  const storeItem = productToCartItem(product)
+  const cartQuantity = useCartStore(
+    (state) =>
+      state.items.find(
+        (item) =>
+          item.productId === storeItem.productId &&
+          JSON.stringify(item.attributes ?? []) ===
+            JSON.stringify(storeItem.attributes ?? [])
+      )?.quantity ?? 0
+  )
+  const isWishlisted = useWishlistStore((state) =>
+    state.items.some((item) => item.productId === storeItem.productId)
+  )
+  const isInCart = cartQuantity > 0
+
   return (
     <article className="group min-w-0">
       <div className="relative aspect-[0.75] overflow-hidden bg-[#f8efe6] md:aspect-[0.78]">
@@ -228,22 +226,42 @@ function ProductCard({ product }: { product: Product }) {
           alt={product.name}
           fill
           sizes="(min-width: 1280px) 220px, (min-width: 768px) 28vw, 48vw"
-          className={`object-cover transition duration-500 group-hover:scale-[1.04] ${product.imageClass}`}
+          className={`object-cover transition duration-500 group-hover:scale-[1.04] ${product.imageClass ?? ""}`}
         />
         <button
           type="button"
           aria-label={`Add ${product.name} to wishlist`}
-          className="absolute right-3 top-3 flex size-8 translate-y-2 items-center justify-center rounded-full bg-[#c39150] text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100"
+          onClick={() => handleToggleWishlist(storeItem)}
+          className={`absolute right-3 top-3 flex size-8 translate-y-2 items-center justify-center rounded-full bg-[#C39150] text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100 ${
+            isWishlisted ? "opacity-100" : ""
+          }`}
         >
-          <Heart className="size-4" />
+          <Heart className="size-4" fill={isWishlisted ? "currentColor" : "none"} />
         </button>
-        <div className="absolute inset-x-3 bottom-3 translate-y-4 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-          <button
-            type="button"
-            className="h-10 w-full rounded-[4px] bg-[#c39150] text-sm font-semibold tracking-[0.12em] text-white shadow-lg shadow-black/10"
-          >
-            Add to Cart
-          </button>
+        <div
+          className={`md:absolute md:inset-x-3 md:bottom-3 md:transition md:duration-300 ${
+            isInCart
+              ? "md:translate-y-0 md:opacity-100"
+              : "md:translate-y-4 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100"
+          }`}
+        >
+          {isInCart ? (
+            <CartQuantityControls
+              quantity={cartQuantity}
+              productName={product.name}
+              onDecrease={() => decrease(storeItem.productId, storeItem.attributes)}
+              onIncrease={() => increase(storeItem.productId, storeItem.attributes)}
+              onRemove={() => removeItem(storeItem.productId, storeItem.attributes)}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleAddToCart(storeItem)}
+              className="h-10 w-full rounded-[4px] bg-[#C39150] text-sm font-semibold tracking-[0.12em] text-white shadow-lg shadow-black/10"
+            >
+              Add to Cart
+            </button>
+          )}
         </div>
       </div>
 
@@ -252,9 +270,66 @@ function ProductCard({ product }: { product: Product }) {
           {product.name}
         </h3>
         <p className="mt-1 text-sm font-medium text-[#111] md:text-xs md:text-[#c39150]">
-          {product.price}
+          {formatPrice(product.price)}
         </p>
       </Link>
+      {isInCart ? (
+        <div className="mt-2 md:hidden">
+          <CartQuantityControls
+            quantity={cartQuantity}
+            productName={product.name}
+            onDecrease={() => decrease(storeItem.productId, storeItem.attributes)}
+            onIncrease={() => increase(storeItem.productId, storeItem.attributes)}
+            onRemove={() => removeItem(storeItem.productId, storeItem.attributes)}
+          />
+        </div>
+      ) : null}
     </article>
+  )
+}
+
+function CartQuantityControls({
+  quantity,
+  productName,
+  onDecrease,
+  onIncrease,
+  onRemove,
+}: {
+  quantity: number
+  productName: string
+  onDecrease: () => void
+  onIncrease: () => void
+  onRemove: () => void
+}) {
+  return (
+    <div className="grid h-10 grid-cols-[40px_1fr_40px_40px] overflow-hidden rounded-[4px] bg-white text-[#3F2617] shadow-lg shadow-black/10">
+      <button
+        type="button"
+        aria-label={`Decrease ${productName} quantity`}
+        onClick={onDecrease}
+        className="flex items-center justify-center border-r border-[#C39150]/30 text-[#C39150]"
+      >
+        <Minus className="size-4" />
+      </button>
+      <span className="flex items-center justify-center text-xs font-semibold">
+        Qty {quantity}
+      </span>
+      <button
+        type="button"
+        aria-label={`Increase ${productName} quantity`}
+        onClick={onIncrease}
+        className="flex items-center justify-center border-l border-[#C39150]/30 text-[#C39150]"
+      >
+        <Plus className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label={`Remove ${productName} from cart`}
+        onClick={onRemove}
+        className="flex items-center justify-center bg-red-50 text-red-500"
+      >
+        <Trash2 className="size-4" />
+      </button>
+    </div>
   )
 }

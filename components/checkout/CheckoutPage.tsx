@@ -1,0 +1,25 @@
+import Image from "next/image"
+
+import { CheckoutFlow } from "@/components/checkout/CheckoutFlow"
+
+
+export function CheckoutPage() {
+  return (
+    <main className="min-h-screen overflow-x-hidden pt-16">
+      <section className="relative isolate min-h-screen overflow-x-hidden">
+        <Image
+          src="/404.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="-z-10 object-cover object-top"
+        />
+
+        <div className="mx-auto w-full max-w-[760px] px-4 pb-12 pt-7 sm:px-6 md:pb-20 md:pt-12 lg:px-0">
+          <CheckoutFlow />
+        </div>
+      </section>
+    </main>
+  )
+}

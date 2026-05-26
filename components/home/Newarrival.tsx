@@ -3,34 +3,7 @@ import Link from "next/link"
 import { ArrowRight, Flower2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-
-const products = [
-  {
-    name: "Lagdi Patta Dupata",
-    price: "₹1,850.00",
-    image: "/home/new-arrival-model.png",
-  },
-  {
-    name: "Lagdi Patta Saree",
-    price: "₹1,850.00",
-    image: "/home/gottpatti.png",
-  },
-  {
-    name: "Jaal Chunri With Pittan Work",
-    price: "₹1,850.00",
-    image: "/home/zardozi.png",
-  },
-  {
-    name: "Radiant Peal Satin Tissue Saree",
-    price: "₹1,850.00",
-    image: "/home/shrug.png",
-  },
-  {
-    name: "Lagdi Patta Dupata",
-    price: "₹1,850.00",
-    image: "/home/belbuti.png",
-  },
-]
+import { formatPrice, products } from "@/components/global/const"
 
 const Newarrival = () => {
   return (
@@ -76,7 +49,7 @@ const Newarrival = () => {
             </h2>
             <div className="mx-auto mt-3 flex w-48 items-center justify-center gap-2 text-[#c39150] md:mt-[1.7vw] md:w-[18vw] md:max-w-80 md:gap-3">
               <span className="h-px flex-1 bg-linear-to-r from-transparent to-[#c39150]" />
-              <span className="size-2 rotate-45 bg-[#c39150] md:size-3" />
+              <span className="size-2 rotate-45 bg-[#C39150] md:size-3" />
               <span className="h-px flex-1 bg-linear-to-l from-transparent to-[#c39150]" />
             </div>
             <p className="mx-auto mt-5 max-w-[18rem] text-poppins font-semibold leading-6 text-[#1d130f] md:mt-[1.8vw] md:max-w-[28vw] md:text-[1.2vw] md:leading-[1.28]">
@@ -84,7 +57,7 @@ const Newarrival = () => {
             </p>
             <Button
               asChild
-              className="mt-5 h-10 rounded-[2px] bg-[#c39150] px-10 text-xs font-semibold text-white shadow-none hover:bg-[#3f2617] md:mt-[2.45vw] md:h-[3.5vw] md:min-h-14 md:min-w-[21vw] md:px-[3vw] md:text-[1.2vw]"
+              className="mt-5 h-10 rounded-[2px] bg-[#C39150] px-10 text-xs font-semibold text-white shadow-none hover:bg-[#3F2617] md:mt-[2.45vw] md:h-[3.5vw] md:min-h-14 md:min-w-[21vw] md:px-[3vw] md:text-[1.2vw]"
             >
               <Link href="/shop">
                 Shop This Look
@@ -131,7 +104,7 @@ const Newarrival = () => {
                 {product.name}
               </h3>
               <p className="mt-1 text-xs font-medium text-[#1d130f] sm:mt-2 sm:text-sm">
-                {product.price}
+                {formatPrice(product.price)}
               </p>
             </Link>
           ))}

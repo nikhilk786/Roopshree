@@ -305,7 +305,7 @@ function FilterPanel({
                 onClick={() => onChoosePreset(preset)}
                 className={`h-7 w-full border text-[11px] transition ${
                   selectedPreset === preset.label
-                    ? "border-[#c39150] bg-[#c39150] text-white"
+                    ? "border-[#c39150] bg-[#C39150] text-white"
                     : "border-[#d8a15a] bg-white text-[#3F2617]"
                 }`}
               >
@@ -318,7 +318,7 @@ function FilterPanel({
         <button
           type="button"
           onClick={onApply}
-          className="h-8 w-full rounded-[2px] bg-[#c39150] text-xs font-medium text-white transition hover:bg-[#3F2617]"
+          className="h-8 w-full rounded-[2px] bg-[#C39150] text-xs font-medium text-white transition hover:bg-[#3F2617]"
         >
           {applied ? "Filters Applied" : "Apply Filters"}
         </button>
@@ -365,7 +365,7 @@ function FilterGroup({
               />
               <span
                 className={`flex size-3 shrink-0 items-center justify-center border border-[#d8a15a] ${
-                  checked ? "bg-[#c39150]" : "bg-white"
+                  checked ? "bg-[#C39150]" : "bg-white"
                 }`}
               >
                 {checked ? <Check className="size-2.5 text-white" /> : null}
@@ -404,7 +404,7 @@ function RangeSlider({
     <div className="relative h-5">
       <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#ead0ad]" />
       <div
-        className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#c39150]"
+        className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#C39150]"
         style={{ left: `${minPercent}%`, right: `${100 - maxPercent}%` }}
       />
       <input

@@ -22,7 +22,7 @@ const stats = [
 const Divider = () => (
   <div className="flex w-64 items-center justify-start gap-3 text-[#c39150]">
     <span className="h-px w-[9.5rem] bg-linear-to-r from-transparent via-[#c39150] to-[#c39150]" />
-    <span className="size-2.5 shrink-0 rotate-45 bg-[#c39150]" />
+    <span className="size-2.5 shrink-0 rotate-45 bg-[#C39150]" />
     <span className="h-px w-[9.5rem] bg-linear-to-r from-[#c39150] via-[#c39150]/70 to-transparent" />
   </div>
 )
@@ -77,7 +77,7 @@ const Heritage = () => {
 
           <Button
             asChild
-            className="mt-6 h-11 rounded-[2px] bg-[#c39150] px-7 text-xs font-semibold text-white shadow-none hover:bg-[#3f2617] sm:h-12 sm:px-10 sm:text-base"
+            className="mt-6 h-11 rounded-[2px] bg-[#C39150] px-7 text-xs font-semibold text-white shadow-none hover:bg-[#3F2617] sm:h-12 sm:px-10 sm:text-base"
           >
             <Link href="/about">
               Discover Our Craft
@@ -103,7 +103,7 @@ const Heritage = () => {
                   {index < stats.length - 1 ? (
                     <div className="absolute right-0 top-1/2 hidden h-16 -translate-y-1/2 items-center sm:flex">
                       <span className="h-full w-px bg-linear-to-b from-transparent via-[#c39150] to-transparent" />
-                      <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-[#c39150]" />
+                      <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-[#C39150]" />
                     </div>
                   ) : null}
                 </div>
