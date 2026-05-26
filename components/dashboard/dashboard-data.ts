@@ -95,27 +95,6 @@ export const orderSummary = [
   { label: "Total", value: "₹10,030", strong: true },
 ]
 
-export const wishlistProducts = [
-  {
-    id: 1,
-    name: "Lagdi Patta Dupata",
-    price: "₹1,850.00",
-    image: "/home/new-arrival-model.png",
-  },
-  {
-    id: 2,
-    name: "Lagdi Patta Dupata",
-    price: "₹1,850.00",
-    image: "/home/new-arrival-model.png",
-  },
-  {
-    id: 3,
-    name: "Lagdi Patta Dupata",
-    price: "₹1,850.00",
-    image: "/home/new-arrival-model.png",
-  },
-]
-
 export const submittedReview = {
   customer: "John Doe",
   product: "Bandhej Saree",

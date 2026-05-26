@@ -1,9 +1,7 @@
-import React from 'react'
+import { BlogListingPage } from "@/components/blog/BlogListingPage"
 
-function blogs() {
-  return (
-    <div>blogs</div>
-  )
+function Blogs() {
+  return <BlogListingPage />
 }
 
-export default blogs
+export default Blogs

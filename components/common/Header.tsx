@@ -16,6 +16,8 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { useCartStore } from "@/store/cartStore"
+import { useWishlistStore } from "@/store/wishlistStore"
 
 
 
@@ -31,6 +33,10 @@ const Header = () => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [hasScrolled, setHasScrolled] = useState(false)
+  const cartCount = useCartStore((state) =>
+    state.items.reduce((total, item) => total + item.quantity, 0)
+  )
+  const wishlistCount = useWishlistStore((state) => state.items.length)
 
   useEffect(() => {
     const onScroll = () => setHasScrolled(window.scrollY > 12)
@@ -201,12 +207,26 @@ const Header = () => {
             </Button>
           </Link>
 
-          <Button aria-label="Cart" size="icon-sm" variant="ghost">
-            <ShoppingBag className="size-4" />
-          </Button>
-          <Link href="/wishlist" className="hidden sm:inline-flex">
-            <Button aria-label="Wishlist" size="icon-sm" variant="ghost">
+          <Link href="/cart">
+            <Button
+              aria-label={`Cart, ${cartCount} items`}
+              size="icon-sm"
+              variant="ghost"
+              className="relative"
+            >
+              <ShoppingBag className="size-4" />
+              {cartCount > 0 ? <NavBadge count={cartCount} /> : null}
+            </Button>
+          </Link>
+          <Link href="/wishlist" className="hidden sm:block">
+            <Button
+              aria-label={`Wishlist, ${wishlistCount} items`}
+              size="icon-sm"
+              variant="ghost"
+              className="relative"
+            >
               <Heart className="size-4" />
+              {wishlistCount > 0 ? <NavBadge count={wishlistCount} /> : null}
             </Button>
           </Link>
         </div>
@@ -216,6 +236,14 @@ const Header = () => {
       ? createPortal(mobileMenu, document.body)
       : null}
     </>
+  )
+}
+
+function NavBadge({ count }: { count: number }) {
+  return (
+    <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-[#C39150] px-1 text-[10px] font-semibold leading-4 text-white">
+      {count > 99 ? "99+" : count}
+    </span>
   )
 }
 

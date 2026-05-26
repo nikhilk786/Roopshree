@@ -5,34 +5,7 @@ import { Home, Search, Frown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Header from "@/components/common/Header"
 import Footer from "@/components/common/Footer"
-
-const products = [
-  {
-    name: "Lagdi Patta Dupata",
-    price: "₹1,850.00",
-    image: "/home/belbuti.png",
-  },
-  {
-    name: "Lagdi Patta Saree",
-    price: "₹1,850.00",
-    image: "/product/product_img.png",
-  },
-  {
-    name: "Jaal Chunri With Pittan Work",
-    price: "₹1,850.00",
-    image: "/home/zardozi.png",
-  },
-  {
-    name: "Radiant Peal Satin Tissue Saree",
-    price: "₹1,850.00",
-    image: "/home/shrug.png",
-  },
-  {
-    name: "Lagdi Patta Dupata",
-    price: "₹1,850.00",
-    image: "/home/belbuti.png",
-  },
-]
+import { formatPrice, products } from "@/components/global/const"
 
 const NotFound = () => {
   return (
@@ -116,7 +89,7 @@ const NotFound = () => {
                   {product.name}
                 </h3>
                 <p className="mt-2 text-sm font-medium text-[#c39150]">
-                  {product.price}
+                  {formatPrice(product.price)}
                 </p>
               </Link>
             ))}

@@ -84,7 +84,7 @@ const StayConnected = () => {
 
         <div className="mx-auto mt-4 flex w-52 items-center justify-center gap-3 text-[#c39150]">
           <span className="h-px flex-1 bg-linear-to-r from-transparent to-[#c39150]" />
-          <span className="size-2.5 rotate-45 bg-[#c39150]" />
+          <span className="size-2.5 rotate-45 bg-[#C39150]" />
           <span className="h-px flex-1 bg-linear-to-l from-transparent to-[#c39150]" />
         </div>
 
@@ -99,7 +99,7 @@ const StayConnected = () => {
           <span className="text-xl font-medium leading-none sm:hidden">𝕏</span>
           <InstagramMark className="size-5 sm:size-7" />
           <MailMark className="size-6 sm:size-8" />
-          <span className="hidden h-9 w-px bg-[#3f2617]/45 sm:block" />
+          <span className="hidden h-9 w-px bg-[#3F2617]/45 sm:block" />
           <p className="hidden font-heading text-xl text-[#3f2617] sm:block">
             @roopshreebandhej
           </p>
@@ -127,7 +127,7 @@ const StayConnected = () => {
 
         <Button
           asChild
-          className="mt-9 h-12 rounded-[3px] bg-[#c39150] px-9 text-sm font-semibold text-white shadow-none hover:bg-[#3f2617] sm:h-14 sm:min-w-[21rem] sm:px-12 sm:text-xl"
+          className="mt-9 h-12 rounded-[3px] bg-[#C39150] px-9 text-sm font-semibold text-white shadow-none hover:bg-[#3F2617] sm:h-14 sm:min-w-[21rem] sm:px-12 sm:text-xl"
         >
           <Link href="https://www.instagram.com/" target="_blank">
             <InstagramMark className="size-5 sm:size-7" />

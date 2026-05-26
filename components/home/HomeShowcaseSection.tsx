@@ -1,5 +1,7 @@
+"use client"
+
 import Image from "next/image"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ArrowRight,
   BadgeCheck,
@@ -8,6 +10,7 @@ import {
   LockKeyhole,
   Truck,
 } from "lucide-react"
+import { Card } from "../ui/card"
 
 const collections = [
   "Renial brooch Dupata With Krishna Buta",
@@ -40,15 +43,21 @@ const benefits = [
 ]
 
 const HomeShowcaseSection = () => {
+  const router = useRouter()
+
+  const handleCardClick = () => {
+    router.push("/shop")
+  }
+
   return (
     <section className="bg-white py-14 md:py-20">
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-4">
           {collections.map((title, index) => (
-            <Link
+            <Card
               key={`${title}-${index}`}
-              href="/shop"
-              className="group relative aspect-square overflow-hidden rounded-[4px] border border-[#ead8c5] bg-[#fbf2ea] transition duration-300 hover:border-[#c39150]/70"
+              onClick={handleCardClick}
+              className="group relative aspect-square overflow-hidden rounded-[4px] border border-[#ead8c5]  transition duration-300 hover:border-[#c39150]/70 cursor-pointer"
             >
               <div className="absolute bottom-[22%] left-[6.4%] top-[27%] z-10 flex w-[58%] flex-col">
                 <Flower2 className="mb-[6%] size-3.5 text-[#c39150] sm:size-7 xl:size-6" />
@@ -63,13 +72,13 @@ const HomeShowcaseSection = () => {
 
               <Image
                 src="/home/showcase.png"
-                alt=""
+                alt={title}
                 width={198}
                 height={329}
                 sizes="(min-width: 1280px) 185px, (min-width: 640px) 215px, 190px"
                 className="absolute bottom-0 right-[-7%] top-0 h-full w-auto max-w-none object-contain object-right opacity-95 sm:right-[-3%] xl:right-[-8%]"
               />
-            </Link>
+            </Card>
           ))}
         </div>
 
