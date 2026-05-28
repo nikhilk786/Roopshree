@@ -48,6 +48,7 @@ function mapProductRow(row: ProductListRow) {
 
   return {
     id: row.id,
+    variantId: row.variantId,
     slug: row.slug,
     name: row.name,
     colour: row.color ?? '',

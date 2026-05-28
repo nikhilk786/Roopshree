@@ -1,5 +1,6 @@
 import Footer from "@/components/common/Footer"
 import Header from "@/components/common/Header"
+import { StoreHydrator } from "@/components/global/StoreHydrator"
 import { getCurrentSession } from "@/lib/auth"
 
 
@@ -10,6 +11,7 @@ export default async function Layout({ children }: {
    
 
     return <>
+      <StoreHydrator isAuthenticated={Boolean(session)} />
       <Header isAuthenticated={Boolean(session)} />
         {children}
        <Footer />

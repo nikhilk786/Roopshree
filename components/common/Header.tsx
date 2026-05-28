@@ -36,7 +36,9 @@ const Header = ({ isAuthenticated = false }: { isAuthenticated?: boolean }) => {
   const cartCount = useCartStore((state) =>
     state.items.reduce((total, item) => total + item.quantity, 0)
   )
+  const clearCart = useCartStore((state) => state.clearCart)
   const wishlistCount = useWishlistStore((state) => state.items.length)
+  const clearWishlist = useWishlistStore((state) => state.clearWishlist)
 
   useEffect(() => {
     const onScroll = () => setHasScrolled(window.scrollY > 12)
@@ -54,6 +56,13 @@ const Header = ({ isAuthenticated = false }: { isAuthenticated?: boolean }) => {
       document.body.style.overflow = ""
     }
   }, [isMenuOpen])
+
+  useEffect(() => {
+    if (isAuthenticated) return
+
+    clearCart()
+    clearWishlist()
+  }, [clearCart, clearWishlist, isAuthenticated])
 
   const mobileMenu = (
     <AnimatePresence>

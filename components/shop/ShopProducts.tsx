@@ -214,11 +214,13 @@ function SortControl({
 }
 
 function ProductCard({ product }: { product: Product }) {
-  const { handleAddToCart } = useAddToCart()
+  const {
+    handleAddToCart,
+    handleDecreaseCartItem,
+    handleIncreaseCartItem,
+    handleRemoveCartItem,
+  } = useAddToCart()
   const { handleToggleWishlist } = useWishlist()
-  const increase = useCartStore((state) => state.increase)
-  const decrease = useCartStore((state) => state.decrease)
-  const removeItem = useCartStore((state) => state.removeItem)
   const storeItem = productToCartItem(product)
   const cartQuantity = useCartStore(
     (state) =>
@@ -271,9 +273,9 @@ function ProductCard({ product }: { product: Product }) {
             <CartQuantityControls
               quantity={cartQuantity}
               productName={product.name}
-              onDecrease={() => decrease(storeItem.productId, storeItem.attributes)}
-              onIncrease={() => increase(storeItem.productId, storeItem.attributes)}
-              onRemove={() => removeItem(storeItem.productId, storeItem.attributes)}
+              onDecrease={() => handleDecreaseCartItem(storeItem)}
+              onIncrease={() => handleIncreaseCartItem(storeItem)}
+              onRemove={() => handleRemoveCartItem(storeItem)}
             />
           ) : (
             <button

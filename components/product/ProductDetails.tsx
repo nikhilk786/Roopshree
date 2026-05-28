@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ChevronLeft,
   ChevronRight,
@@ -77,11 +78,14 @@ export type ProductDetailView = {
 const breadcrumbs = ["Home", "Categories", "Products", "Product Details"]
 
 const ProductDetails = ({ product }: { product: ProductDetailView }) => {
-  const { handleAddToCart } = useAddToCart()
+  const router = useRouter()
+  const {
+    handleAddToCart,
+    handleDecreaseCartItem,
+    handleIncreaseCartItem,
+    handleRemoveCartItem,
+  } = useAddToCart()
   const { handleToggleWishlist } = useWishlist()
-  const increase = useCartStore((state) => state.increase)
-  const decrease = useCartStore((state) => state.decrease)
-  const removeItem = useCartStore((state) => state.removeItem)
   const defaultVariant =
     product.variants.find((variant) => variant.isDefault) ??
     product.variants[0] ??
@@ -133,6 +137,8 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
   )
   const cartItem: CartItemInput = {
     productId: `${product.slug}:${selectedVariant?.id ?? "default"}`,
+    dbProductId: product.id,
+    variantId: selectedVariant?.id,
     title: product.name,
     price,
     image: displayedImage,
@@ -321,13 +327,13 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
                 <ProductQuantityControls
                   quantity={cartQuantity}
                   onDecrease={() =>
-                    decrease(cartItem.productId, cartItem.attributes)
+                    handleDecreaseCartItem(cartItem)
                   }
                   onIncrease={() =>
-                    increase(cartItem.productId, cartItem.attributes)
+                    handleIncreaseCartItem(cartItem)
                   }
                   onRemove={() =>
-                    removeItem(cartItem.productId, cartItem.attributes)
+                    handleRemoveCartItem(cartItem)
                   }
                 />
               ) : (
@@ -341,7 +347,21 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
                     : "Add to cart"}
                 </Button>
               )}
-              <Button className="h-12 rounded-none bg-[#3f2617] text-sm font-semibold text-white hover:bg-[#c39150]">
+              <Button
+                disabled={selectedVariant?.stockQuantity === 0}
+                onClick={() => {
+                  window.sessionStorage.setItem(
+                    "roopshree-buy-now",
+                    JSON.stringify({
+                      ...cartItem,
+                      quantity: 1,
+                      addedAt: Date.now(),
+                    }),
+                  )
+                  router.push("/checkout?source=buy-now")
+                }}
+                className="h-12 rounded-none bg-[#3f2617] text-sm font-semibold text-white hover:bg-[#c39150] disabled:opacity-60"
+              >
                 Buy Now
               </Button>
             </div>

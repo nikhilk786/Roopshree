@@ -1,21 +1,23 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
-import {
-  overviewStats,
-  recentOrders,
-} from "@/components/dashboard/dashboard-data"
+import { overviewStats } from "@/components/dashboard/dashboard-data"
 import { OrderCard } from "@/components/dashboard/OrderCard"
 import type { AddressView } from "@/services/address.service"
+import type { DashboardOrderCardView } from "@/services/order.service"
 
 export function DashboardOverview({
   addresses,
+  orders,
 }: {
   addresses: AddressView[]
+  orders: DashboardOrderCardView[]
 }) {
   const stats = overviewStats.map((stat) =>
     stat.label === "Addresses"
       ? { ...stat, value: String(addresses.length) }
+      : stat.label === "Orders"
+        ? { ...stat, value: String(orders.length) }
       : stat,
   )
   const defaultAddress =
@@ -64,9 +66,15 @@ export function DashboardOverview({
             </Link>
           </div>
           <div className="space-y-5">
-            {recentOrders.map((order, index) => (
-              <OrderCard key={`${order.id}-${index}`} order={order} />
-            ))}
+            {orders.length > 0 ? (
+              orders.map((order) => (
+                <OrderCard key={order.slug} order={order} />
+              ))
+            ) : (
+              <div className="border border-[#ead8c4] bg-white p-6 text-sm text-[#777]">
+                No orders yet.
+              </div>
+            )}
           </div>
         </section>
 

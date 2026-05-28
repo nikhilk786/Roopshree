@@ -8,12 +8,13 @@ import { DashboardPageTitle } from "@/components/dashboard/DashboardPrimitives"
 import { formatPrice } from "@/components/global/const"
 import { Button } from "@/components/ui/button"
 import { useAddToCart } from "@/hooks/useAddToCart"
+import { useWishlist } from "@/hooks/useWishlist"
 import { useWishlistStore } from "@/store/wishlistStore"
 
 export function WishlistPage() {
   const wishlistProducts = useWishlistStore((state) => state.items)
-  const removeWishlistItem = useWishlistStore((state) => state.removeItem)
   const { handleAddToCart } = useAddToCart()
+  const { handleRemoveWishlist } = useWishlist()
 
   return (
     <div>
@@ -42,7 +43,7 @@ export function WishlistPage() {
               <button
                 type="button"
                 aria-label={`Remove ${product.title} from wishlist`}
-                onClick={() => removeWishlistItem(product.productId)}
+                onClick={() => handleRemoveWishlist(product)}
                 className="absolute right-2 top-2 flex size-9 items-center justify-center rounded-full bg-white/90 text-[#C39150] shadow-sm transition hover:bg-white hover:text-[#3F2617]"
               >
                 <Heart className="size-4" fill="currentColor" />
@@ -53,7 +54,7 @@ export function WishlistPage() {
                   size="sm"
                   onClick={() => {
                     handleAddToCart(product)
-                    removeWishlistItem(product.productId)
+                    handleRemoveWishlist(product)
                   }}
                   className="bg-[#3F2617] text-white hover:bg-[#2d180f]"
                 >
