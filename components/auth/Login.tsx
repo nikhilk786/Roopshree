@@ -4,6 +4,8 @@ import Image from "next/image";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { signInAction } from "@/actions/auth.action";
+import { useToast } from "@/components/common/ToastProvider";
 
 export default function Login({
   onCreateAccount,
@@ -14,6 +16,7 @@ export default function Login({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,21 +29,17 @@ export default function Login({
     setIsSubmitting(true);
 
     const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
-    const response = await fetch("/api/auth/sign-in", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    const response = await signInAction({ email, password });
 
     setIsSubmitting(false);
 
     if (!response.ok) {
-      setError("Invalid email or password");
+      showToast({ title: response.error ?? "Invalid email or password", tone: "error" });
+      setError(response.error ?? "Invalid email or password");
       return;
     }
 
+    showToast({ title: "Logged in successfully", tone: "success" });
     router.push(callbackUrl);
     router.refresh();
   }

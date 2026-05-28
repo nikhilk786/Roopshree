@@ -1,115 +1,150 @@
-import {
-  CognitoIdentityProviderClient,
-  InitiateAuthCommand,
-} from '@aws-sdk/client-cognito-identity-provider'
-import { createHmac } from 'node:crypto'
+import { AWS_ACCESS_KEY_ID, AWS_REGION, AWS_SECRET_ACCESS_KEY, COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, USER_POOL_ID } from '@/config/env';
+import { AdminGetUserCommand, AdminUpdateUserAttributesCommand, AuthFlowType, CognitoIdentityProviderClient, ConfirmForgotPasswordCommand, ConfirmSignUpCommand, ForgotPasswordCommand, InitiateAuthCommand, SignUpCommand, type AttributeType } from '@aws-sdk/client-cognito-identity-provider';
+import crypto from 'crypto';
 
-type CognitoAuthResult = {
-  accessToken: string
-  idToken: string
-  refreshToken: string
-  expiresIn: number
+export const generateSecretHash = async (username: string) => {
+    const hmac = crypto.createHmac('sha256', COGNITO_CLIENT_SECRET);
+    hmac.update(username + COGNITO_CLIENT_ID);
+    return hmac.digest('base64');
+};
+
+export const cognito = new CognitoIdentityProviderClient({
+    region: AWS_REGION,
+    credentials: {
+        accessKeyId: AWS_ACCESS_KEY_ID,
+        secretAccessKey: AWS_SECRET_ACCESS_KEY,
+    },
+});
+
+
+
+export async function cognitoAdminGetUser({ email }: { email: string }) {
+    const params = {
+        UserPoolId: USER_POOL_ID,
+        Username: email,
+    };
+    const commandLogin = new AdminGetUserCommand(params);
+    return cognito.send(commandLogin);
 }
 
-type CognitoRefreshResult = Omit<CognitoAuthResult, 'refreshToken'> & {
-  refreshToken?: string
+
+export async function cognitoSignUp({ email, userAttribute, password }: { email: string, userAttribute: AttributeType[], password: string }) {
+    const createUserParams = {
+        ClientId: COGNITO_CLIENT_ID,
+        Username: email,
+        Password: password,
+        UserAttributes: userAttribute,
+        SecretHash: await generateSecretHash(email),
+    };
+
+    const createUserCommand = new SignUpCommand(createUserParams);
+    return cognito.send(createUserCommand);
 }
 
-const cognitoClient = new CognitoIdentityProviderClient({
-  region: process.env.COGNITO_REGION ?? process.env.AWS_REGION,
-})
 
-function getCognitoClientId() {
-  const clientId = process.env.COGNITO_CLIENT_ID
-
-  if (!clientId) {
-    throw new Error('Missing COGNITO_CLIENT_ID')
-  }
-
-  return clientId
+export async function cognitoUpdateUserAttribute({ userAttribute, email }: { userAttribute: AttributeType[], email: string }) {
+    const params = {
+        UserPoolId: USER_POOL_ID,
+        Username: email,
+        UserAttributes: userAttribute,
+    };
+    const command = new AdminUpdateUserAttributesCommand(params);
+    return cognito.send(command);
 }
 
-function getSecretHash(username: string) {
-  const clientSecret = process.env.COGNITO_CLIENT_SECRET
 
-  if (!clientSecret) {
-    return undefined
-  }
+export async function cognitoConfirmSignUp({ email, code }: { email: string, code: string }) {
+    const params = {
+        ClientId: COGNITO_CLIENT_ID,
+        Username: email,
+        ConfirmationCode: code,
+        SecretHash: await generateSecretHash(email),
+    };
 
-  return createHmac('sha256', clientSecret)
-    .update(`${username}${getCognitoClientId()}`)
-    .digest('base64')
+    const command = new ConfirmSignUpCommand(params);
+    return cognito.send(command);
 }
 
-function buildAuthParameters(username: string, password?: string) {
-  const authParameters: Record<string, string> = {
-    USERNAME: username,
-  }
+export async function authSingIn({ email, password }: { email: string, password: string }) {
+    if (!email || !password) {
+        throw new Error('Email and password are required.');
+    }
 
-  if (password) {
-    authParameters.PASSWORD = password
-  }
-
-  const secretHash = getSecretHash(username)
-
-  if (secretHash) {
-    authParameters.SECRET_HASH = secretHash
-  }
-
-  return authParameters
+    try {
+        const response = await cognitoInitiateAuth({ email, password });
+        return {
+            message: 'Login successful.',
+            accessToken: response.AuthenticationResult?.AccessToken,
+            idToken: response.AuthenticationResult?.IdToken,
+            refreshToken: response.AuthenticationResult?.RefreshToken,
+            expiresIn: response.AuthenticationResult?.ExpiresIn,
+            tokenType: response.AuthenticationResult?.TokenType,
+        };
+    } catch (error) {
+        throw error;
+    }
 }
 
-export async function authSignIn(
-  email: string,
-  password: string,
-): Promise<CognitoAuthResult> {
-  const response = await cognitoClient.send(
-    new InitiateAuthCommand({
-      AuthFlow: 'USER_PASSWORD_AUTH',
-      ClientId: getCognitoClientId(),
-      AuthParameters: buildAuthParameters(email, password),
-    }),
-  )
+export const authSignIn = authSingIn;
 
-  const result = response.AuthenticationResult
 
-  if (!result?.AccessToken || !result.IdToken || !result.RefreshToken) {
-    throw new Error('Invalid Cognito sign-in response')
-  }
-
-  return {
-    accessToken: result.AccessToken,
-    idToken: result.IdToken,
-    refreshToken: result.RefreshToken,
-    expiresIn: result.ExpiresIn ?? 3600,
-  }
+export async function cognitoInitiateAuth({ email, password }: { email: string, password: string }) {
+    const paramsLogin = {
+        AuthFlow: 'USER_PASSWORD_AUTH' as AuthFlowType,
+        ClientId: COGNITO_CLIENT_ID,
+        AuthParameters: {
+            USERNAME: email,
+            PASSWORD: password,
+            SECRET_HASH: await generateSecretHash(email),
+        },
+    };
+    const commandLogin = new InitiateAuthCommand(paramsLogin);
+    return cognito.send(commandLogin);
 }
 
-export async function refreshCognitoTokens(
-  refreshToken: string,
-  username: string,
-): Promise<CognitoRefreshResult> {
-  const response = await cognitoClient.send(
-    new InitiateAuthCommand({
-      AuthFlow: 'REFRESH_TOKEN_AUTH',
-      ClientId: getCognitoClientId(),
-      AuthParameters: {
-        ...buildAuthParameters(username),
-        REFRESH_TOKEN: refreshToken,
-      },
-    }),
-  )
+export async function refreshCognitoTokens({ email, refreshToken }: { email: string, refreshToken: string }) {
+    const params = {
+        AuthFlow: 'REFRESH_TOKEN_AUTH' as AuthFlowType,
+        ClientId: COGNITO_CLIENT_ID,
+        AuthParameters: {
+            USERNAME: email,
+            REFRESH_TOKEN: refreshToken,
+            SECRET_HASH: await generateSecretHash(email),
+        },
+    };
 
-  const result = response.AuthenticationResult
+    const command = new InitiateAuthCommand(params);
+    const response = await cognito.send(command);
 
-  if (!result?.AccessToken || !result.IdToken) {
-    throw new Error('Invalid Cognito refresh response')
-  }
+    return {
+        accessToken: response.AuthenticationResult?.AccessToken,
+        idToken: response.AuthenticationResult?.IdToken,
+        refreshToken: response.AuthenticationResult?.RefreshToken,
+        expiresIn: response.AuthenticationResult?.ExpiresIn,
+        tokenType: response.AuthenticationResult?.TokenType,
+    };
+}
 
-  return {
-    accessToken: result.AccessToken,
-    idToken: result.IdToken,
-    refreshToken: result.RefreshToken,
-    expiresIn: result.ExpiresIn ?? 3600,
-  }
+export async function cognitoForgotPassword({ email }: { email: string }) {
+    const params = {
+        ClientId: COGNITO_CLIENT_ID,
+        Username: email,
+        SecretHash: await generateSecretHash(email),
+    };
+
+    const command = new ForgotPasswordCommand(params);
+    return cognito.send(command);
+}
+
+export async function cognitoConfirmForgotPassword({ email, code, newPassword }: { email: string, code: string, newPassword: string }) {
+    const params = {
+        ClientId: COGNITO_CLIENT_ID,
+        Username: email,
+        ConfirmationCode: code,
+        Password: newPassword,
+        SecretHash: await generateSecretHash(email),
+    };
+
+    const command = new ConfirmForgotPasswordCommand(params);
+    return cognito.send(command);
 }

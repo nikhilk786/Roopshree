@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { ChevronRight, UserRound } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -10,9 +10,13 @@ import {
   dashboardNavItems,
   signOutItem,
 } from "@/components/dashboard/dashboard-data"
+import { logout } from "@/lib/logout"
+import { useToast } from "@/components/common/ToastProvider"
 
 export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { showToast } = useToast()
   const SignOutIcon = signOutItem.icon
 
   return (
@@ -54,15 +58,22 @@ export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
             </Link>
           )
         })}
-        <Link
-          href={signOutItem.href}
-          onClick={onNavigate}
+        <button
+          type="button"
+          onClick={async () => {
+            onNavigate?.()
+            showToast({ title: "Signing out...", tone: "info" })
+            await logout()
+            showToast({ title: "Signed out successfully", tone: "success" })
+            router.push(signOutItem.href)
+            router.refresh()
+          }}
           className="flex h-12 items-center gap-3 px-5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
         >
           <SignOutIcon className="size-4" />
           <span className="min-w-0 flex-1 truncate">{signOutItem.label}</span>
           <ChevronRight className="size-4 opacity-70" />
-        </Link>
+        </button>
       </nav>
     </aside>
   )

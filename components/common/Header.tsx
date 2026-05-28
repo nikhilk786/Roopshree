@@ -29,7 +29,7 @@ const navLinks = [
   { label: "Blogs", href: "/blogs" },
 ]
 
-const Header = () => {
+const Header = ({ isAuthenticated = false }: { isAuthenticated?: boolean }) => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [hasScrolled, setHasScrolled] = useState(false)
@@ -117,14 +117,36 @@ const Header = () => {
               ))}
             </nav>
 
-            <Button
-              asChild
-              className="mt-auto h-12 rounded-[4px] bg-[#C39150] text-base text-white hover:bg-[#3F2617]"
-            >
-              <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>
-                Account
-              </Link>
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                asChild
+                className="mt-auto h-12 rounded-[4px] bg-[#C39150] text-base text-white hover:bg-[#3F2617]"
+              >
+                <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                  Account
+                </Link>
+              </Button>
+            ) : (
+              <div className="mt-auto grid gap-3">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-12 rounded-[4px] border-[#C39150] text-base text-[#C39150]"
+                >
+                  <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
+                    Login
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  className="h-12 rounded-[4px] bg-[#C39150] text-base text-white hover:bg-[#3F2617]"
+                >
+                  <Link href="/auth?view=signup" onClick={() => setIsMenuOpen(false)}>
+                    Sign Up
+                  </Link>
+                </Button>
+              </div>
+            )}
           </motion.aside>
         </>
       ) : null}
@@ -205,12 +227,31 @@ const Header = () => {
             <Search className="size-4" />
           </label>
 
-          
-          <Link href="/dashboard">
-            <Button aria-label="Account" size="icon-sm" variant="ghost">
-              <User size={20} />
-            </Button>
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/dashboard">
+              <Button aria-label="Account" size="icon-sm" variant="ghost">
+                <User size={20} />
+              </Button>
+            </Link>
+          ) : (
+            <div className="hidden items-center gap-2 sm:flex">
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="text-[#3F2617] hover:text-[#C39150]"
+              >
+                <Link href="/auth">Login</Link>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                className="rounded-[4px] bg-[#C39150] px-3 text-white hover:bg-[#3F2617]"
+              >
+                <Link href="/auth?view=signup">Sign Up</Link>
+              </Button>
+            </div>
+          )}
 
           <Link href="/cart">
             <Button

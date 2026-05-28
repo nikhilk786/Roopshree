@@ -1,9 +1,7 @@
 import {
   boolean,
   index,
-  integer,
   pgTable,
-  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -54,6 +52,5 @@ export const blogs = pgTable(
     index('blogs_category_id_idx').on(table.categoryId),
   ],
 )
-
 
 

@@ -2,9 +2,39 @@ import NewsletterSection from "@/components/shop/Newsletter";
 import HeroSection from "@/components/shop/Hero";
 import ShopFilters from "@/components/shop/ShopFilters";
 import ShopProducts from "@/components/shop/ShopProducts";
-import React from "react";
+import {
+  getCatalogCategories,
+  getCatalogProductPage,
+} from "@/services/product.service";
 
-const page = () => {
+const page = async ({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    category?: string;
+    page?: string;
+    sort?: string;
+  }>;
+}) => {
+  const params = await searchParams;
+  const currentPage = Number(params?.page ?? 1);
+  const pageSize = 12;
+  const [{ items, total }, categories] = await Promise.all([
+    getCatalogProductPage({
+      limit: pageSize,
+      offset: (Math.max(currentPage, 1) - 1) * pageSize,
+      categorySlug: params?.category,
+      sortBy:
+        params?.sort === "newest" ||
+        params?.sort === "price-low" ||
+        params?.sort === "price-high"
+          ? params.sort
+          : "featured",
+    }),
+    getCatalogCategories(8),
+  ]);
+
+  console.log( "items are", items)
   return (
     <main className="flex-1 overflow-x-hidden">
       <HeroSection />
@@ -16,7 +46,12 @@ const page = () => {
           </div>
           <div className="grid min-w-0 gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
             <ShopFilters />
-            <ShopProducts />
+            <ShopProducts
+              products={items}
+              categories={categories}
+              total={total}
+              currentPage={Math.max(currentPage, 1)}
+            />
           </div>
           <NewsletterSection />
         </div>

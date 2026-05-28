@@ -28,13 +28,19 @@ export function CartItemRow({ item }: { item: CartItem }) {
     <article className="grid gap-4 border-b border-[#3F2617]/55 py-4 md:grid-cols-[minmax(0,1fr)_110px_110px_110px_56px] md:items-start">
       <div className="flex min-w-0 gap-4">
         <div className="relative h-[74px] w-[62px] shrink-0 overflow-hidden bg-[#f7eadb]">
-          <Image
-            src={item.image}
-            alt={item.title}
-            fill
-            sizes="62px"
-            className="object-contain object-top"
-          />
+          {item.image ? (
+            <Image
+              src={item.image}
+              alt={item.title}
+              fill
+              sizes="62px"
+              className="object-contain object-top"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center px-2 text-center text-[10px] font-medium text-[#3f2617]/70">
+              No image
+            </div>
+          )}
         </div>
         <div className="min-w-0 pt-0.5">
           <h2 className="font-heading text-sm font-semibold leading-snug text-[#3F2617]">

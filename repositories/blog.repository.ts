@@ -1,4 +1,14 @@
-import { desc, eq } from 'drizzle-orm'
+import {
+  and,
+  desc,
+  eq,
+  ilike,
+  isNull,
+  lte,
+  ne,
+  or,
+  type SQL,
+} from 'drizzle-orm'
 import { blogCategories, blogs } from '@/db/schema/content'
 import { mediaAssets } from '@/db/schema/products'
 import { db } from '@/lib/db'
@@ -9,16 +19,45 @@ type BlogWritePayload = BlogPayload & {
   tags: string[]
 }
 
-async function getOrCreateBlogCategory(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  name?: string,
-) {
+export type BlogListQuery = {
+  limit?: number
+  offset?: number
+  categorySlug?: string
+  search?: string
+  excludeSlug?: string
+}
+
+export type BlogRow = {
+  id: string
+  slug: string
+  title: string
+  excerpt: string | null
+  content: string
+  authorName: string | null
+  metaDescription: string | null
+  tags: string[] | null
+  publishedAt: Date | null
+  createdAt: Date
+  categoryName: string | null
+  categorySlug: string | null
+  imageKey: string | null
+  imageAlt: string | null
+}
+
+export type BlogCategoryRow = {
+  id: string
+  name: string
+  slug: string
+}
+
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+async function getOrCreateBlogCategory(tx: DbTransaction, name?: string) {
   const categoryName = name?.trim()
 
   if (!categoryName) return null
 
   const slug = categoryName
-    .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
@@ -38,10 +77,7 @@ async function getOrCreateBlogCategory(
   return created
 }
 
-async function getOrCreateCoverMediaId(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  image?: string,
-) {
+async function getOrCreateCoverMediaId(tx: DbTransaction, image?: string) {
   const key = image?.trim()
 
   if (!key) return null
@@ -60,6 +96,37 @@ async function getOrCreateCoverMediaId(
     .returning({ id: mediaAssets.id })
 
   return asset.id
+}
+
+function getPublishedBlogWhere(query: BlogListQuery = {}) {
+  const filters: (SQL | undefined)[] = [
+    eq(blogs.isVisible, true),
+    or(isNull(blogs.publishedAt), lte(blogs.publishedAt, new Date())),
+    query.categorySlug ? eq(blogCategories.slug, query.categorySlug) : undefined,
+    query.search ? ilike(blogs.title, `%${query.search}%`) : undefined,
+    query.excludeSlug ? ne(blogs.slug, query.excludeSlug) : undefined,
+  ]
+
+  return and(...filters)
+}
+
+function getBlogSelect() {
+  return {
+    id: blogs.id,
+    slug: blogs.slug,
+    title: blogs.title,
+    excerpt: blogs.excerpt,
+    content: blogs.content,
+    authorName: blogs.authorName,
+    metaDescription: blogs.metaDescription,
+    tags: blogs.tags,
+    publishedAt: blogs.publishedAt,
+    createdAt: blogs.createdAt,
+    categoryName: blogCategories.name,
+    categorySlug: blogCategories.slug,
+    imageKey: mediaAssets.key,
+    imageAlt: mediaAssets.altText,
+  }
 }
 
 export async function findBlogsWithRelations() {
@@ -141,4 +208,41 @@ export async function updateBlogRecord(id: string, payload: BlogWritePayload) {
 
 export async function deleteBlogRecord(id: string) {
   return db.delete(blogs).where(eq(blogs.id, id))
+}
+
+export async function listBlogRows(
+  query: BlogListQuery = {},
+): Promise<BlogRow[]> {
+  return db
+    .select(getBlogSelect())
+    .from(blogs)
+    .leftJoin(blogCategories, eq(blogCategories.id, blogs.categoryId))
+    .leftJoin(mediaAssets, eq(mediaAssets.id, blogs.coverMediaId))
+    .where(getPublishedBlogWhere(query))
+    .orderBy(desc(blogs.publishedAt), desc(blogs.createdAt))
+    .limit(query.limit ?? 24)
+    .offset(query.offset ?? 0)
+}
+
+export async function findBlogRowBySlug(slug: string): Promise<BlogRow | null> {
+  const [blog] = await db
+    .select(getBlogSelect())
+    .from(blogs)
+    .leftJoin(blogCategories, eq(blogCategories.id, blogs.categoryId))
+    .leftJoin(mediaAssets, eq(mediaAssets.id, blogs.coverMediaId))
+    .where(and(getPublishedBlogWhere(), eq(blogs.slug, slug)))
+    .limit(1)
+
+  return blog ?? null
+}
+
+export async function listBlogCategoryRows(): Promise<BlogCategoryRow[]> {
+  return db
+    .select({
+      id: blogCategories.id,
+      name: blogCategories.name,
+      slug: blogCategories.slug,
+    })
+    .from(blogCategories)
+    .orderBy(blogCategories.name)
 }
