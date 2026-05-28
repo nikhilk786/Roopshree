@@ -14,18 +14,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-full overflow-hidden bg-muted/40">
+    <div className="flex h-full overflow-hidden bg-white">
       <div className="sticky top-0 hidden h-screen lg:block">
         <Sidebar />
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-white">
         <div className="flex items-center gap-2 border-b bg-background p-3 lg:hidden">
           <MobileSidebar />
           <span className="text-lg font-semibold">Admin</span>
         </div>
 
-        <div className="">{children}</div>
+        <div className="[&_[data-slot=card]]:bg-white">{children}</div>
       </div>
     </div>
   );

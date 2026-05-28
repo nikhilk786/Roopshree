@@ -97,6 +97,7 @@ export const productVariants = pgTable(
     size: varchar('size', { length: 80 }),
     color: varchar('color', { length: 80 }),
     fabric: varchar('fabric', { length: 120 }),
+    bannerImage: text('banner_image'),
     isDefault: boolean('is_default').default(false).notNull(),
     isActive: boolean('is_active').default(true).notNull(),
     ...timestamps,
@@ -154,15 +155,18 @@ export const productMedia = pgTable(
     mediaAssetId: uuid('media_asset_id')
       .notNull()
       .references(() => mediaAssets.id, { onDelete: 'cascade' }),
-    variantId: uuid('variant_id').references(() => productVariants.id, {
-      onDelete: 'cascade',
-    }),
+    variantId: uuid('variant_id')
+      .notNull()
+      .references(() => productVariants.id, {
+        onDelete: 'cascade',
+      }),
     sortOrder: integer('sort_order').default(0).notNull(),
     isPrimary: boolean('is_primary').default(false).notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.productId, table.mediaAssetId] }),
+    primaryKey({ columns: [table.productId, table.variantId, table.mediaAssetId] }),
     index('product_media_product_id_idx').on(table.productId),
+    index('product_media_product_variant_idx').on(table.productId, table.variantId),
     index('product_media_variant_id_idx').on(table.variantId),
   ],
 )

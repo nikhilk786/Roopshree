@@ -28,6 +28,8 @@ import { deleteCategory } from "@/helper/category/action";
 
 export type CategoryRow = {
   id: string;
+  parentId?: string | null;
+  parentName?: string | null;
   name: string;
   slug: string;
   description: string | null;
@@ -39,6 +41,19 @@ type CategoryTableProps = {
 };
 
 const pageSize = 10;
+const descriptionPreviewWords = 3;
+
+function getDescriptionPreview(description: string | null) {
+  if (!description?.trim()) return "-";
+
+  const words = description.trim().split(/\s+/);
+
+  if (words.length <= descriptionPreviewWords) {
+    return description.trim();
+  }
+
+  return `${words.slice(0, descriptionPreviewWords).join(" ")}...`;
+}
 
 export default function CategoryTable({ page, categories }: CategoryTableProps) {
   const startIndex = (page - 1) * pageSize;
@@ -67,6 +82,7 @@ export default function CategoryTable({ page, categories }: CategoryTableProps) 
           <TableRow>
             <TableHead>S.No</TableHead>
             <TableHead>Category Name</TableHead>
+            <TableHead>Parent Category</TableHead>
             <TableHead>Slug</TableHead>
             <TableHead>Description</TableHead>
             <TableHead className="text-right">Action</TableHead>
@@ -77,8 +93,13 @@ export default function CategoryTable({ page, categories }: CategoryTableProps) 
             <TableRow key={category.id}>
               <TableCell>{startIndex + index + 1}</TableCell>
               <TableCell>{category.name}</TableCell>
+              <TableCell>
+                {category.parentId === category.id
+                  ? "No parent"
+                  : category.parentName ?? "No parent"}
+              </TableCell>
               <TableCell>{category.slug}</TableCell>
-              <TableCell>{category.description ?? "-"}</TableCell>
+              <TableCell>{getDescriptionPreview(category.description)}</TableCell>
               <TableCell>
                 <div className="flex justify-end gap-2">
                   <Button
@@ -118,7 +139,7 @@ export default function CategoryTable({ page, categories }: CategoryTableProps) 
           ))}
           {categories.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center text-gray-600">
+              <TableCell colSpan={6} className="h-24 text-center text-gray-600">
                 No categories found.
               </TableCell>
             </TableRow>

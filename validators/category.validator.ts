@@ -39,6 +39,10 @@ export function validateCategoryUpdatePayload(
     throw new Error('Category id is required')
   }
 
+  if (data.parentId && data.parentId === data.id) {
+    throw new Error('A category cannot be its own parent')
+  }
+
   return {
     ...data,
     id: data.id,

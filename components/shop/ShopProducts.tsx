@@ -77,12 +77,12 @@ export default function ShopProducts({
       </h2>
 
       {categories.length > 0 ? (
-        <div className="scrollbar-hidden flex max-w-full gap-4 overflow-x-auto pb-2 lg:gap-5">
+        <div className="scrollbar-hidden flex max-w-full gap-6 overflow-x-auto pb-2 lg:gap-8">
         {categories.map((category, index) => (
           <Link
             key={`${category.slug ?? category.name}-${index}`}
             href={buildHref({ category: category.slug ?? null, page: 1 })}
-            className=" w-48 h-auto"
+            className="h-auto w-auto shrink-0"
           >
           {category.image ? (
             <Image src={category.image} height={400} width={400} alt={category.name} className=" h-48 w-auto object-contain" />
@@ -118,11 +118,13 @@ export default function ShopProducts({
         </div>
       )}
 
-      <div className="mt-12 hidden items-center justify-end gap-2 text-xs text-[#3F2617] lg:flex">
+      <div className="mt-12 hidden items-center justify-end gap-2 text-xs font-medium text-[#3F2617] lg:flex">
         <Link
           aria-label="Previous page"
           href={buildHref({ page: Math.max(pageNumber - 1, 1) })}
-          className={pageNumber === 1 ? "pointer-events-none opacity-40" : ""}
+          className={`flex size-8 items-center justify-center rounded-[3px] border border-[#d8a15a] bg-white transition hover:border-[#c39150] hover:text-[#c39150] ${
+            pageNumber === 1 ? "pointer-events-none opacity-40" : ""
+          }`}
         >
           <ChevronLeft className="size-4" />
         </Link>
@@ -130,10 +132,10 @@ export default function ShopProducts({
           <Link
             key={page}
             href={buildHref({ page })}
-            className={`size-6 rounded-[2px] border text-xs ${
+            className={`flex size-8 items-center justify-center rounded-[3px] border transition ${
               page === pageNumber
                 ? "border-[#c39150] bg-[#C39150] text-white"
-                : "border-[#d8a15a] bg-white text-[#3F2617]"
+                : "border-[#d8a15a] bg-white text-[#3F2617] hover:border-[#c39150] hover:text-[#c39150]"
             }`}
           >
             {page}
@@ -141,13 +143,15 @@ export default function ShopProducts({
         ))}
         {totalPages > 4 ? (
           <>
-            <span>........</span>
+            <span className="flex size-8 items-center justify-center text-[#3F2617]/55">
+              ...
+            </span>
             <Link
               href={buildHref({ page: totalPages })}
-              className={`h-6 min-w-7 rounded-[2px] border px-1 ${
+              className={`flex h-8 min-w-8 items-center justify-center rounded-[3px] border px-2 transition ${
                 pageNumber === totalPages
                   ? "border-[#c39150] bg-[#C39150] text-white"
-                  : "border-[#d8a15a] bg-white text-[#3F2617]"
+                  : "border-[#d8a15a] bg-white text-[#3F2617] hover:border-[#c39150] hover:text-[#c39150]"
               }`}
             >
               {totalPages}
@@ -157,7 +161,9 @@ export default function ShopProducts({
         <Link
           aria-label="Next page"
           href={buildHref({ page: Math.min(pageNumber + 1, totalPages) })}
-          className={pageNumber === totalPages ? "pointer-events-none opacity-40" : ""}
+          className={`flex size-8 items-center justify-center rounded-[3px] border border-[#d8a15a] bg-white transition hover:border-[#c39150] hover:text-[#c39150] ${
+            pageNumber === totalPages ? "pointer-events-none opacity-40" : ""
+          }`}
         >
           <ChevronRight className="size-4" />
         </Link>

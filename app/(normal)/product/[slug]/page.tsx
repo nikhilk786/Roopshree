@@ -42,7 +42,6 @@ const Page = async ({
 }) => {
   const { slug } = await params
   const product = await getProductDetailsBySlug(slug)
-
   if (!product) {
     notFound()
   }
@@ -75,7 +74,7 @@ const Page = async ({
         </div>
       </section>
 
-      <ProductDescriptionReviews />
+      <ProductDescriptionReviews product={product} />
       <YouMayAlsoLike />
       
 

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import {
   Card,
   CardContent,
@@ -13,13 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { getAllCategoriesMeta, updateCategory } from "@/helper/category/action";
 import { toast } from "sonner";
@@ -29,19 +22,21 @@ export default function EditCategory({ categoryInfo }: any) {
   const router = useRouter();
   const { upload, uploading } = useFileUpload();
   const bannerRef = useRef<HTMLInputElement>(null);
+  const [isPending, startTransition] = useTransition();
+  const initialParentId =
+    categoryInfo.parentId && categoryInfo.parentId !== categoryInfo.id
+      ? categoryInfo.parentId
+      : "";
 
   const [form, setForm] = useState({
     name: categoryInfo.name,
-    parent: categoryInfo.parentId ?? "",
     description: categoryInfo.description ?? "",
   });
 
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     [],
   );
-  const [selectedParent, setSelectedParent] = useState<string>(
-    categoryInfo.parentId ?? "", // Spelling fixed: parrentId -> parentId
-  );
+  const [selectedParent, setSelectedParent] = useState<string>(initialParentId);
 
   const [bannerImageKey, setBannerImageKey] = useState<string>(
     categoryInfo.bannerImage ?? "",
@@ -58,23 +53,27 @@ export default function EditCategory({ categoryInfo }: any) {
     fetchCategories();
   }, []);
 
-  const submitHandler = async (e: any) => {
+  const submitHandler = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const categoryData = {
-      id: categoryInfo.id,
-      name: form.name,
-      parentId: selectedParent,
-      description: form.description,
-      bannerImage: bannerImageKey,
-    };
 
-    const response = await updateCategory(categoryData);
-    if (response?.success == true) {
-      toast.success(response.message ?? "Category updated successfully");
-      router.push("/admin/category");
-    } else {
+    startTransition(async () => {
+      const response = await updateCategory({
+        id: categoryInfo.id,
+        name: form.name,
+        parentId: selectedParent,
+        description: form.description,
+        bannerImage: bannerImageKey,
+      });
+
+      if (response?.success) {
+        toast.success(response.message ?? "Category updated successfully");
+        router.push("/admin/category");
+        router.refresh();
+        return;
+      }
+
       toast.error(response?.message ?? "Failed to update category");
-    }
+    });
   };
 
   const handleBanner = async (file?: File) => {
@@ -110,12 +109,11 @@ export default function EditCategory({ categoryInfo }: any) {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={(e) => submitHandler(e)}>
+          <form onSubmit={submitHandler}>
             <input type="hidden" name="id" value={categoryInfo.id} />
             <input type="hidden" name="parentId" value={selectedParent} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-              {/* Left column */}
               <div className="space-y-6">
                 <div className="space-y-1.5">
                   <Label className="text-slate-600 font-medium">
@@ -123,9 +121,10 @@ export default function EditCategory({ categoryInfo }: any) {
                   </Label>
                   <Input
                     name="name"
-                    defaultValue={categoryInfo.name}
+                    value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     className="h-11"
+                    required
                   />
                 </div>
 
@@ -133,21 +132,20 @@ export default function EditCategory({ categoryInfo }: any) {
                   <Label className="text-slate-600 font-medium">
                     Parent Category
                   </Label>
-                  <Select
+                  <select
                     value={selectedParent}
-                    onValueChange={(value) => setSelectedParent(value)}
+                    onChange={(event) => setSelectedParent(event.target.value)}
+                    className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
-                    <SelectTrigger className="h-11">
-                      <SelectValue placeholder="Select parent" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
+                    <option value="">No parent</option>
+                    {categories
+                      .filter((category) => category.id !== categoryInfo.id)
+                      .map((category) => (
+                        <option key={category.id} value={category.id}>
                           {category.name}
-                        </SelectItem>
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
+                  </select>
                 </div>
 
                 <div className="space-y-1.5">
@@ -156,7 +154,7 @@ export default function EditCategory({ categoryInfo }: any) {
                   </Label>
                   <Textarea
                     name="description"
-                    defaultValue={categoryInfo.description}
+                    value={form.description}
                     onChange={(e) =>
                       setForm({ ...form, description: e.target.value })
                     }
@@ -165,18 +163,11 @@ export default function EditCategory({ categoryInfo }: any) {
                 </div>
               </div>
 
-              {/* Right column - Updated Image Logic */}
               <div className="space-y-6">
                 <div className="space-y-1.5">
                   <Label className="text-slate-600 font-medium">
                     Category Image
                   </Label>
-
-                  {/* ImageUpload component with initial image support */}
-                  {/* <ImageUpload 
-                    onUploadSuccess={(url) => setPreview(url)} 
-                    initialImage={preview} // Agar aap apne ImageUpload component mein ye prop add karein to purani image dikhegi
-                  /> */}
 
                   <div
                     onClick={() => bannerRef.current?.click()}
@@ -207,11 +198,6 @@ export default function EditCategory({ categoryInfo }: any) {
                     onChange={(e) => handleBanner(e.target.files?.[0])}
                   />
 
-                  {bannerImageKey ? (
-                    <p className="mt-1 truncate text-xs text-muted-foreground">
-                      {bannerImageKey}
-                    </p>
-                  ) : null}
                 </div>
               </div>
             </div>
@@ -228,9 +214,10 @@ export default function EditCategory({ categoryInfo }: any) {
 
               <Button
                 type="submit"
+                disabled={isPending || uploading}
                 className="px-12 h-11 rounded-full bg-[#2D5A5D] hover:bg-[#234749] text-white"
               >
-                Update
+                {isPending ? "Updating..." : "Update"}
               </Button>
             </div>
           </form>

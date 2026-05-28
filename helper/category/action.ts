@@ -44,9 +44,11 @@ export async function createCategory(payload: unknown) {
 
 export async function updateCategory(payload: unknown) {
   try {
-    await updateCategoryService(validateCategoryUpdatePayload(payload));
+    const data = validateCategoryUpdatePayload(payload);
+    await updateCategoryService(data);
 
     revalidatePath("/admin/category");
+    revalidatePath(`/admin/category/${data.id}`);
     return { success: true, message: "Category updated successfully" };
   } catch (error) {
     console.error("Update category failed:", error);

@@ -5,6 +5,7 @@ import {
   listCategoryRows,
   listProductDetailAttributes,
   listProductDetailMedia,
+  listProductReviews,
   listProductDetailVariants,
   listProductRows,
   countProductRows,
@@ -38,7 +39,8 @@ export async function updateProduct(productId: string, payload: ProductPayload) 
 }
 
 function mapProductRow(row: ProductListRow) {
-  const image = row.imageKey ? getS3ObjectPreviewUrl(row.imageKey) : ''
+  const imageKey = row.imageKey ?? row.variantBannerImage
+  const image = imageKey ? getS3ObjectPreviewUrl(imageKey) : ''
   const price = (row.variantPrice ?? row.basePrice) / 100
 
   return {
@@ -104,16 +106,31 @@ export async function getProductDetailsBySlug(slug: string) {
     return null
   }
 
-  const [variants, media, attributes] = await Promise.all([
+  const [variants, media, attributes, reviews] = await Promise.all([
     listProductDetailVariants(product.id),
     listProductDetailMedia(product.id),
     listProductDetailAttributes(product.id),
+    listProductReviews(product.id),
   ])
 
   const defaultVariant = variants.find((variant) => variant.isDefault) ?? variants[0]
   const price = (defaultVariant?.price ?? product.basePrice) / 100
   const strikeThroughPrice =
     (defaultVariant?.strikeThroughPrice ?? product.strikeThroughPrice ?? 0) / 100
+  const reviewCount =
+    defaultVariant?.reviewCount ??
+    reviews.length
+  const averageRating = reviews.length
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+    : (defaultVariant?.rating ?? 0)
+  const ratingRows = [5, 4, 3, 2, 1].map((rating) => {
+    const count = reviews.filter((review) => review.rating === rating).length
+
+    return {
+      rating,
+      percent: reviews.length ? Math.round((count / reviews.length) * 100) : 0,
+    }
+  })
 
   return {
     id: product.id,
@@ -136,10 +153,13 @@ export async function getProductDetailsBySlug(slug: string) {
       fabric: variant.fabric,
       size: variant.size,
       isDefault: variant.isDefault,
+      rating: variant.rating,
+      reviewCount: variant.reviewCount,
       image: (() => {
         const imageKey =
+          variant.bannerImage ??
           media.find((item) => item.variantId === variant.id)?.key ??
-          media.find((item) => item.isPrimary)?.key ??
+          media.find((item) => item.variantId === defaultVariant?.id && item.isPrimary)?.key ??
           media[0]?.key
 
         return imageKey ? getS3ObjectPreviewUrl(imageKey) : ''
@@ -157,5 +177,18 @@ export async function getProductDetailsBySlug(slug: string) {
       name: attribute.name,
       value: attribute.value,
     })),
+    reviews: reviews.map((review) => ({
+      id: review.id,
+      rating: review.rating,
+      title: review.title ?? 'Customer review',
+      message: review.message,
+      reviewerName: review.reviewerName ?? 'Customer',
+      createdAt: review.createdAt.toISOString(),
+    })),
+    reviewSummary: {
+      averageRating,
+      reviewCount,
+      ratingRows,
+    },
   }
 }

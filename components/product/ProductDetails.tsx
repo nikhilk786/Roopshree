@@ -40,13 +40,15 @@ export type ProductDetailView = {
     fabric: string | null
     size: string | null
     isDefault: boolean
+    rating: number
+    reviewCount: number
     image: string
   }[]
   media: {
     id: string
     src: string
     alt: string
-    variantId: string | null
+    variantId: string
     isPrimary: boolean
   }[]
   attributes: {
@@ -54,6 +56,22 @@ export type ProductDetailView = {
     name: string
     value: string
   }[]
+  reviews: {
+    id: string
+    rating: number
+    title: string
+    message: string
+    reviewerName: string
+    createdAt: string
+  }[]
+  reviewSummary: {
+    averageRating: number
+    reviewCount: number
+    ratingRows: {
+      rating: number
+      percent: number
+    }[]
+  }
 }
 
 const breadcrumbs = ["Home", "Categories", "Products", "Product Details"]
@@ -78,9 +96,17 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
   const selectedMedia =
     product.media.find((item) => item.id === selectedMediaId) ??
     product.media.find((item) => item.variantId === selectedVariant?.id) ??
-    product.media.find((item) => item.isPrimary) ??
+    product.media.find(
+      (item) => item.variantId === defaultVariant?.id && item.isPrimary
+    ) ??
     product.media[0] ??
     null
+  const selectedVariantMedia = product.media.filter(
+    (item) => item.variantId === selectedVariant?.id
+  )
+  const galleryMedia = selectedVariantMedia.length
+    ? selectedVariantMedia
+    : product.media.filter((item) => item.variantId === defaultVariant?.id)
   const displayedImage = selectedMedia?.src ?? selectedVariant?.image ?? ""
   const displayedAlt = selectedMedia?.alt ?? product.name
   const price = selectedVariant?.price ?? product.price
@@ -90,7 +116,7 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
     strikeThroughPrice && strikeThroughPrice > price
       ? Math.round(((strikeThroughPrice - price) / strikeThroughPrice) * 100)
       : null
-  const productAttributes = useMemo(
+  const variantAttributes = useMemo(
     () =>
       [
         selectedVariant?.color
@@ -102,9 +128,8 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
         selectedVariant?.size
           ? { name: "Size", value: selectedVariant.size }
           : null,
-        ...product.attributes,
       ].filter(Boolean) as { name: string; value: string }[],
-    [product.attributes, selectedVariant]
+    [selectedVariant]
   )
   const cartItem: CartItemInput = {
     productId: `${product.slug}:${selectedVariant?.id ?? "default"}`,
@@ -113,7 +138,7 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
     image: displayedImage,
     colour: selectedVariant?.color ?? undefined,
     imageClass: "object-top",
-    attributes: productAttributes.length ? productAttributes : undefined,
+    attributes: variantAttributes.length ? variantAttributes : undefined,
   }
   const cartQuantity = useCartStore(
     (state) =>
@@ -160,7 +185,7 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
               )}
             </div>
 
-            {product.media.length > 0 ? (
+            {galleryMedia.length > 0 ? (
               <div className="mt-7 flex items-center gap-4">
                 <button
                   type="button"
@@ -171,7 +196,7 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
                 </button>
 
                 <div className="grid flex-1 grid-cols-4 gap-3 sm:gap-5">
-                  {product.media.slice(0, 4).map((image) => (
+                  {galleryMedia.slice(0, 4).map((image) => (
                     <button
                       key={image.id}
                       type="button"
@@ -236,9 +261,9 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
             {product.variants.length > 0 ? (
               <div className="mt-7">
                 <p className="text-xs font-bold uppercase text-black">
-                  Variant: {selectedVariant?.title}
+                  Colour: {selectedVariant?.color ?? selectedVariant?.title}
                 </p>
-                <div className="mt-4 flex flex-wrap gap-4">
+                <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
                   {product.variants.map((variant) => (
                     <button
                       key={variant.id}
@@ -247,27 +272,35 @@ const ProductDetails = ({ product }: { product: ProductDetailView }) => {
                         setSelectedVariantId(variant.id)
                         setSelectedMediaId(null)
                       }}
-                      className={`min-h-12 min-w-24 border px-3 py-2 text-left text-xs font-semibold transition ${
+                      className={`overflow-hidden rounded-[3px] border bg-white text-left transition ${
                         selectedVariant?.id === variant.id
-                          ? "border-[#c39150] text-[#c39150]"
-                          : "border-[#d8b278] text-[#3f2617]"
+                          ? "border-[#c39150] shadow-sm"
+                          : "border-[#d8b278] hover:border-[#c39150]"
                       }`}
                     >
-                      <span className="block">{variant.title}</span>
-                      {variant.color ? (
-                        <span className="mt-1 block font-normal">
-                          {variant.color}
-                        </span>
-                      ) : null}
+                      <span className="relative block aspect-[0.78] bg-[#f8efe6]">
+                        {variant.image ? (
+                          <Image
+                            src={variant.image}
+                            alt={variant.title}
+                            fill
+                            sizes="120px"
+                            className="object-cover object-top"
+                          />
+                        ) : null}
+                      </span>
+                      <span className="block truncate px-2 py-2 text-xs font-semibold text-[#3f2617]">
+                        {variant.color ?? variant.title}
+                      </span>
                     </button>
                   ))}
                 </div>
               </div>
             ) : null}
 
-            {productAttributes.length > 0 ? (
+            {variantAttributes.length > 0 ? (
               <div className="mt-6 grid gap-3">
-                {productAttributes.map((attribute) => (
+                {variantAttributes.map((attribute) => (
                   <div
                     key={`${attribute.name}-${attribute.value}`}
                     className="flex min-h-11 items-center justify-between gap-4 border border-[#d8b278] px-4 text-sm"

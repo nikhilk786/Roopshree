@@ -31,6 +31,7 @@ type MediaRow = {
 };
 
 type VariantRow = {
+  id?: string;
   sku: string;
   title: string;
   price: string;
@@ -39,6 +40,8 @@ type VariantRow = {
   size: string;
   color: string;
   fabric: string;
+  banner: MediaRow | null;
+  gallery: MediaRow[];
   isDefault: boolean;
   isActive: boolean;
 };
@@ -55,8 +58,15 @@ type ProductDetails = {
   isFeatured?: boolean;
   categoryRes?: { categories: { id: string } }[];
   productAttributeRes?: { name?: string; attribute?: string; value: string }[];
-  productMediaRes?: { key?: string; mediaURL?: string; previewUrl?: string }[];
+  productMediaRes?: {
+    key?: string;
+    mediaURL?: string;
+    previewUrl?: string;
+    variantId?: string | null;
+    isPrimary?: boolean;
+  }[];
   productVariantRes?: Array<{
+    id: string;
     sku: string;
     title: string;
     price: number;
@@ -65,6 +75,7 @@ type ProductDetails = {
     size?: string | null;
     color?: string | null;
     fabric?: string | null;
+    bannerImage?: string | null;
     isDefault: boolean;
     isActive: boolean;
   }>;
@@ -84,6 +95,8 @@ const emptyVariant: VariantRow = {
   size: "",
   color: "",
   fabric: "",
+  banner: null,
+  gallery: [],
   isDefault: false,
   isActive: true,
 };
@@ -133,17 +146,28 @@ export default function ProductForm({ product }: ProductFormProps) {
       value: item.value ?? item.filter ?? "",
     })) ?? [],
   );
-  const [media, setMedia] = useState<MediaRow[]>(
-    product?.productMediaRes
-      ?.map((item) => ({
+  const mediaByVariant = useMemo(() => {
+    const grouped = new Map<string, MediaRow[]>();
+
+    product?.productMediaRes?.forEach((item) => {
+      if (!item.variantId) return;
+
+      const mediaItem = {
         key: item.key ?? item.mediaURL ?? "",
         previewUrl: item.previewUrl ?? item.mediaURL ?? "",
-      }))
-      .filter((item) => item.key) ?? [],
-  );
+      };
+
+      if (!mediaItem.key) return;
+
+      grouped.set(item.variantId, [...(grouped.get(item.variantId) ?? []), mediaItem]);
+    });
+
+    return grouped;
+  }, [product]);
   const [variants, setVariants] = useState<VariantRow[]>(
     product?.productVariantRes?.length
       ? product.productVariantRes.map((variant) => ({
+          id: variant.id,
           sku: variant.sku,
           title: variant.title,
           price: rupees(variant.price),
@@ -152,6 +176,21 @@ export default function ProductForm({ product }: ProductFormProps) {
           size: variant.size ?? "",
           color: variant.color ?? "",
           fabric: variant.fabric ?? "",
+          banner: (() => {
+            const variantMedia = mediaByVariant.get(variant.id) ?? [];
+            const bannerKey = variant.bannerImage ?? variantMedia[0]?.key ?? "";
+
+            if (!bannerKey) return null;
+
+            return {
+              key: bannerKey,
+              previewUrl:
+                variantMedia.find((item) => item.key === bannerKey)?.previewUrl ??
+                variantMedia[0]?.previewUrl ??
+                bannerKey,
+            };
+          })(),
+          gallery: (mediaByVariant.get(variant.id) ?? []).slice(1),
           isDefault: variant.isDefault,
           isActive: variant.isActive,
         }))
@@ -182,8 +221,15 @@ export default function ProductForm({ product }: ProductFormProps) {
       categoryIds,
       attributes: attributes.filter((item) => item.name && item.value),
       filters: filters.filter((item) => item.name && item.value),
-      media: media.filter((item) => item.key).map((item) => ({ key: item.key })),
-      variants: variants.filter((variant) => variant.sku && variant.title),
+      variants: variants
+        .filter((variant) => variant.sku && variant.title)
+        .map((variant) => ({
+          ...variant,
+          banner: variant.banner?.key ?? "",
+          gallery: variant.gallery
+            .filter((item) => item.key)
+            .map((item) => ({ key: item.key })),
+        })),
     };
 
     startTransition(async () => {
@@ -202,14 +248,28 @@ export default function ProductForm({ product }: ProductFormProps) {
     });
   }
 
-  async function handleMediaUpload(file?: File) {
+  async function handleVariantMediaUpload(
+    variantIndex: number,
+    target: "banner" | "gallery",
+    file?: File,
+  ) {
     if (!file) return;
 
     const localPreviewUrl = URL.createObjectURL(file);
 
     try {
       const { fileKey } = await upload(file, "products");
-      setMedia([...media, { key: fileKey, previewUrl: localPreviewUrl }]);
+      setVariants((currentVariants) =>
+        currentVariants.map((variant, index) => {
+          if (index !== variantIndex) return variant;
+
+          const mediaItem = { key: fileKey, previewUrl: localPreviewUrl };
+
+          return target === "banner"
+            ? { ...variant, banner: mediaItem }
+            : { ...variant, gallery: [...variant.gallery, mediaItem] };
+        }),
+      );
       toast.success("Media uploaded");
     } catch (error) {
       URL.revokeObjectURL(localPreviewUrl);
@@ -264,7 +324,7 @@ export default function ProductForm({ product }: ProductFormProps) {
               <Field label="Strike-through price">
                 <Input
                   type="number"
-                  min="0"
+                  min={price ? Number(price) + 0.01 : 0}
                   step="0.01"
                   value={strikeThroughPrice}
                   onChange={(event) => setStrikeThroughPrice(event.target.value)}
@@ -312,7 +372,7 @@ export default function ProductForm({ product }: ProductFormProps) {
                 />
                 <Input
                   type="number"
-                  min="0"
+                  min={variant.price ? Number(variant.price) + 0.01 : 0}
                   step="0.01"
                   placeholder="Strike-through price"
                   value={variant.strikeThroughPrice}
@@ -344,6 +404,85 @@ export default function ProductForm({ product }: ProductFormProps) {
                   value={variant.fabric}
                   onChange={(event) => updateRow(variants, setVariants, index, { fabric: event.target.value })}
                 />
+                <div className="grid gap-3 md:col-span-3">
+                  <div className="grid gap-3 md:grid-cols-[6rem_1fr_auto] md:items-center">
+                    <div className="size-24 overflow-hidden rounded-md border bg-muted">
+                      {variant.banner ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={variant.banner.previewUrl}
+                          alt="Variant banner preview"
+                          className="size-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                    <span className="min-w-0 truncate rounded-md border border-input px-3 py-2 text-sm text-muted-foreground">
+                      {variant.banner?.key ?? "No variant banner uploaded"}
+                    </span>
+                    <label className="inline-flex h-9 cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-background px-2.5 text-sm font-medium shadow-xs transition hover:bg-muted">
+                      <Plus />
+                      {uploading ? "Uploading..." : "Banner"}
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        onChange={(event) =>
+                          handleVariantMediaUpload(index, "banner", event.target.files?.[0])
+                        }
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid gap-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium">Variant gallery</p>
+                      <label className="inline-flex h-8 cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-background px-2.5 text-sm font-medium shadow-xs transition hover:bg-muted">
+                        <Plus />
+                        {uploading ? "Uploading..." : "Gallery"}
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/*"
+                          onChange={(event) =>
+                            handleVariantMediaUpload(index, "gallery", event.target.files?.[0])
+                          }
+                        />
+                      </label>
+                    </div>
+                    {variant.gallery.map((item, mediaIndex) => (
+                      <div key={`${item.key}-${mediaIndex}`} className="flex items-center gap-3">
+                        <div className="size-16 overflow-hidden rounded-md border bg-muted">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={item.previewUrl}
+                            alt="Variant gallery preview"
+                            className="size-full object-cover"
+                          />
+                        </div>
+                        <span className="min-w-0 flex-1 truncate rounded-md border border-input px-3 py-2 text-sm text-muted-foreground">
+                          {item.key}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-sm"
+                          onClick={() =>
+                            updateRow(variants, setVariants, index, {
+                              gallery: removeAt(variant.gallery, mediaIndex),
+                            })
+                          }
+                        >
+                          <Trash2 />
+                        </Button>
+                      </div>
+                    ))}
+                    {variant.gallery.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No gallery images uploaded yet.
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
                 <div className="flex items-center justify-between gap-3">
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -398,44 +537,6 @@ export default function ProductForm({ product }: ProductFormProps) {
             firstPlaceholder="Filter name"
             secondPlaceholder="Filter value"
           />
-          <Card>
-            <CardHeader className="flex-row items-center justify-between">
-              <CardTitle>Media</CardTitle>
-              <label className="inline-flex h-8 cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-background px-2.5 text-sm font-medium shadow-xs transition hover:bg-muted">
-                <Plus />
-                {uploading ? "Uploading..." : "Upload"}
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={(event) => handleMediaUpload(event.target.files?.[0])}
-                />
-              </label>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-            {media.map((item, index) => (
-              <div key={`${item.key}-${index}`} className="flex items-center gap-3">
-                <div className="size-20 overflow-hidden rounded-md border bg-muted">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.previewUrl}
-                    alt="Product media preview"
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="min-w-0 flex-1 truncate rounded-md border border-input px-3 py-2 text-sm text-muted-foreground">
-                  {item.key}
-                </span>
-                <Button type="button" variant="outline" size="icon-sm" onClick={() => setMedia(removeAt(media, index))}>
-                  <Trash2 />
-                </Button>
-              </div>
-            ))}
-            {media.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No media uploaded yet.</p>
-            ) : null}
-            </CardContent>
-          </Card>
         </div>
 
         <div className="grid content-start gap-6">

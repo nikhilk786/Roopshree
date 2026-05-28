@@ -1,4 +1,5 @@
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import { db } from '@/lib/db'
 import { categories, mediaAssets } from '@/db/schema/products'
 import type { CategoryPayload, CategoryQuery } from '@/validators/category.validator'
@@ -65,6 +66,7 @@ export async function findCategoriesPage(query: CategoryQuery) {
   const page = Math.max(1, Number(query.page ?? 1))
   const pageSize = Math.max(1, Number(query.pageSize ?? 10))
   const where = buildCategoryWhere(query)
+  const parentCategories = alias(categories, 'parent_categories')
 
   const [totalResult] = await db
     .select({ value: count() })
@@ -72,8 +74,19 @@ export async function findCategoriesPage(query: CategoryQuery) {
     .where(where)
 
   const items = await db
-    .select()
+    .select({
+      id: categories.id,
+      parentId: categories.parentId,
+      parentName: parentCategories.name,
+      name: categories.name,
+      slug: categories.slug,
+      description: categories.description,
+      bannerImage: categories.bannerImage,
+      createdAt: categories.createdAt,
+      updatedAt: categories.updatedAt,
+    })
     .from(categories)
+    .leftJoin(parentCategories, eq(categories.parentId, parentCategories.id))
     .where(where)
     .orderBy(desc(categories.createdAt))
     .limit(pageSize)
@@ -112,7 +125,7 @@ export async function updateCategoryRecord(
   return db.transaction(async (tx) => {
     const bannerImage = await getOrCreateCategoryMediaKey(tx, payload.bannerImage)
 
-    await tx
+    const [updatedCategory] = await tx
       .update(categories)
       .set({
         name: payload.name,
@@ -123,6 +136,11 @@ export async function updateCategoryRecord(
         updatedAt: new Date(),
       })
       .where(eq(categories.id, payload.id))
+      .returning({ id: categories.id })
+
+    if (!updatedCategory) {
+      throw new Error('Category not found')
+    }
   })
 }
 

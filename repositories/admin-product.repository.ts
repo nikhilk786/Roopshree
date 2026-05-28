@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { and, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import {
   categories,
   mediaAssets,
@@ -124,68 +124,87 @@ async function replaceProductFilters(tx: any, productId: string, filters: any[])
   }
 }
 
+function normalizeVariants(variants: any[]) {
+  return (variants ?? [])
+    .map((variant, index) => ({
+      source: variant,
+      value: {
+        productId: '',
+        sku: String(variant.sku ?? '').trim(),
+        title: String(variant.title ?? '').trim(),
+        price: toPaise(variant.price),
+        strikeThroughPrice: variant.strikeThroughPrice
+          ? toPaise(variant.strikeThroughPrice)
+          : null,
+        stockQuantity: Number(variant.stockQuantity ?? 0),
+        size: variant.size || null,
+        color: variant.color || null,
+        fabric: variant.fabric || null,
+        bannerImage: normalizeImage(variant.banner),
+        isDefault: Boolean(variant.isDefault ?? index === 0),
+        isActive: variant.isActive !== false,
+        hasVariantBox: false,
+      },
+    }))
+    .filter((variant) => variant.value.sku && variant.value.title)
+}
+
 async function replaceProductVariants(tx: any, productId: string, variants: any[]) {
   await tx.delete(productVariants).where(eq(productVariants.productId, productId))
 
-  const values = (variants ?? [])
-    .map((variant, index) => ({
-      productId,
-      sku: String(variant.sku ?? '').trim(),
-      title: String(variant.title ?? '').trim(),
-      price: toPaise(variant.price),
-      strikeThroughPrice: variant.strikeThroughPrice
-        ? toPaise(variant.strikeThroughPrice)
-        : null,
-      stockQuantity: Number(variant.stockQuantity ?? 0),
-      size: variant.size || null,
-      color: variant.color || null,
-      fabric: variant.fabric || null,
-      isDefault: Boolean(variant.isDefault ?? index === 0),
-      isActive: variant.isActive !== false,
-      hasVariantBox: false,
-    }))
-    .filter((variant) => variant.sku && variant.title)
+  const normalized = normalizeVariants(variants)
+  const values = normalized.map((variant) => ({
+    ...variant.value,
+    productId,
+  }))
 
   if (values.length) {
-    await tx.insert(productVariants).values(values)
+    const inserted = await tx.insert(productVariants).values(values).returning()
+
+    return inserted.map((variant: any, index: number) => ({
+      ...variant,
+      source: normalized[index]?.source ?? {},
+    }))
   }
+
+  return []
 }
 
 async function replaceProductMedia(
   tx: any,
   productId: string,
-  payload: AdminProductPayload,
+  variants: { id: string; source: any }[],
 ) {
   await tx.delete(productMedia).where(eq(productMedia.productId, productId))
 
-  const variant = getPrimaryVariant(payload)
-  const imageKeys = payload.media?.length
-    ? payload.media.map((item: any) => item.key ?? item.mediaURL).filter(Boolean)
-    : ([
-        normalizeImage(variant.banner),
-        ...(variant.gallery ?? []).map(normalizeImage),
-      ].filter(Boolean) as string[])
+  for (const variant of variants) {
+    const imageKeys = [
+      normalizeImage(variant.source.banner),
+      ...(variant.source.gallery ?? []).map(normalizeImage),
+    ].filter(Boolean) as string[]
 
-  for (const [index, key] of imageKeys.entries()) {
-    const [asset] = await tx
-      .insert(mediaAssets)
-      .values({
-        key,
-        contentType: 'image/*',
-        ownerType: 'product',
-      })
-      .onConflictDoUpdate({
-        target: mediaAssets.key,
-        set: { key },
-      })
-      .returning({ id: mediaAssets.id })
+    for (const [index, key] of imageKeys.entries()) {
+      const [asset] = await tx
+        .insert(mediaAssets)
+        .values({
+          key,
+          contentType: 'image/*',
+          ownerType: 'product',
+        })
+        .onConflictDoUpdate({
+          target: mediaAssets.key,
+          set: { key },
+        })
+        .returning({ id: mediaAssets.id })
 
-    await tx.insert(productMedia).values({
-      productId,
-      mediaAssetId: asset.id,
-      sortOrder: index,
-      isPrimary: index === 0,
-    })
+      await tx.insert(productMedia).values({
+        productId,
+        variantId: variant.id,
+        mediaAssetId: asset.id,
+        sortOrder: index,
+        isPrimary: index === 0,
+      })
+    }
   }
 }
 
@@ -201,8 +220,39 @@ export async function findProductsPage(query: AdminProductQuery) {
     .where(where)
 
   const rows = await db
-    .select()
+    .select({
+      id: products.id,
+      name: products.name,
+      sku: products.sku,
+      slug: products.slug,
+      shortDescription: products.shortDescription,
+      description: products.description,
+      basePrice: products.basePrice,
+      strikeThroughPrice: products.strikeThroughPrice,
+      status: products.status,
+      isFeatured: products.isFeatured,
+      createdAt: products.createdAt,
+      updatedAt: products.updatedAt,
+      imageKey: mediaAssets.key,
+      variantBannerImage: productVariants.bannerImage,
+    })
     .from(products)
+    .leftJoin(
+      productVariants,
+      and(
+        eq(productVariants.productId, products.id),
+        eq(productVariants.isDefault, true),
+      ),
+    )
+    .leftJoin(
+      productMedia,
+      and(
+        eq(productMedia.productId, products.id),
+        eq(productMedia.variantId, productVariants.id),
+        eq(productMedia.isPrimary, true),
+      ),
+    )
+    .leftJoin(mediaAssets, eq(mediaAssets.id, productMedia.mediaAssetId))
     .where(where)
     .orderBy(desc(products.createdAt))
     .limit(pageSize)
@@ -238,13 +288,19 @@ export async function findFullProduct(id: string) {
       .select({
         key: mediaAssets.key,
         mediaType: mediaAssets.contentType,
+        variantId: productMedia.variantId,
         sortOrder: productMedia.sortOrder,
         isPrimary: productMedia.isPrimary,
       })
       .from(productMedia)
       .innerJoin(mediaAssets, eq(productMedia.mediaAssetId, mediaAssets.id))
-      .where(eq(productMedia.productId, id)),
-    db.select().from(productVariants).where(eq(productVariants.productId, id)),
+      .where(eq(productMedia.productId, id))
+      .orderBy(asc(productMedia.variantId), desc(productMedia.isPrimary), asc(productMedia.sortOrder)),
+    db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.productId, id))
+      .orderBy(desc(productVariants.isDefault), asc(productVariants.title)),
     db.select().from(productFilters).where(eq(productFilters.productId, id)),
   ])
 
@@ -283,9 +339,9 @@ export async function insertAdminProduct(
       created.id,
       payload.attributes ?? variant.attributes ?? {},
     )
-    await replaceProductVariants(tx, created.id, payload.variants ?? [])
+    const variants = await replaceProductVariants(tx, created.id, payload.variants ?? [])
     await replaceProductFilters(tx, created.id, payload.filters ?? [])
-    await replaceProductMedia(tx, created.id, payload)
+    await replaceProductMedia(tx, created.id, variants)
 
     return created
   })
@@ -318,9 +374,9 @@ export async function updateAdminProduct(
 
     await replaceProductCategories(tx, id, categoryIds)
     await replaceProductAttributes(tx, id, payload.attributes ?? variant.attributes ?? {})
-    await replaceProductVariants(tx, id, payload.variants ?? [])
+    const variants = await replaceProductVariants(tx, id, payload.variants ?? [])
     await replaceProductFilters(tx, id, payload.filters ?? [])
-    await replaceProductMedia(tx, id, payload)
+    await replaceProductMedia(tx, id, variants)
 
     return updated
   })

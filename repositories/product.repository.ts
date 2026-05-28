@@ -7,6 +7,7 @@ import {
   productMedia,
   products,
   productVariants,
+  reviews,
 } from '@/db'
 import { db } from '@/lib/db'
 import type { ProductPayload } from '@/validators/product.validator'
@@ -68,6 +69,7 @@ export type ProductListRow = {
   variantPrice: number | null
   variantStrikeThroughPrice: number | null
   color: string | null
+  variantBannerImage: string | null
   imageKey: string | null
   imageAlt: string | null
 }
@@ -100,14 +102,17 @@ export type ProductDetailVariantRow = {
   color: string | null
   fabric: string | null
   size: string | null
+  bannerImage: string | null
   isDefault: boolean
+  rating: number
+  reviewCount: number
 }
 
 export type ProductDetailMediaRow = {
   id: string
   key: string
   altText: string | null
-  variantId: string | null
+  variantId: string
   isPrimary: boolean
   sortOrder: number
 }
@@ -117,6 +122,15 @@ export type ProductDetailAttributeRow = {
   name: string
   value: string
   sortOrder: number
+}
+
+export type ProductReviewRow = {
+  id: string
+  rating: number
+  title: string | null
+  message: string
+  reviewerName: string | null
+  createdAt: Date
 }
 
 function getProductWhere(query: ProductListQuery) {
@@ -161,6 +175,7 @@ export async function listProductRows(
       variantPrice: productVariants.price,
       variantStrikeThroughPrice: productVariants.strikeThroughPrice,
       color: productVariants.color,
+      variantBannerImage: productVariants.bannerImage,
       imageKey: mediaAssets.key,
       imageAlt: mediaAssets.altText,
     })
@@ -179,6 +194,7 @@ export async function listProductRows(
       productMedia,
       and(
         eq(productMedia.productId, products.id),
+        eq(productMedia.variantId, productVariants.id),
         eq(productMedia.isPrimary, true),
       ),
     )
@@ -246,7 +262,10 @@ export async function listProductDetailVariants(
       color: productVariants.color,
       fabric: productVariants.fabric,
       size: productVariants.size,
+      bannerImage: productVariants.bannerImage,
       isDefault: productVariants.isDefault,
+      rating: productVariants.rating,
+      reviewCount: productVariants.reviewCount,
     })
     .from(productVariants)
     .where(
@@ -289,4 +308,19 @@ export async function listProductDetailAttributes(
     .from(productAttributes)
     .where(eq(productAttributes.productId, productId))
     .orderBy(asc(productAttributes.sortOrder), asc(productAttributes.name))
+}
+
+export async function listProductReviews(productId: string): Promise<ProductReviewRow[]> {
+  return db
+    .select({
+      id: reviews.id,
+      rating: reviews.rating,
+      title: reviews.title,
+      message: reviews.message,
+      reviewerName: reviews.reviewerName,
+      createdAt: reviews.createdAt,
+    })
+    .from(reviews)
+    .where(and(eq(reviews.productId, productId), eq(reviews.isApproved, true)))
+    .orderBy(desc(reviews.createdAt))
 }

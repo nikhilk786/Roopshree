@@ -34,7 +34,6 @@ const page = async ({
     getCatalogCategories(8),
   ]);
 
-  console.log( "items are", items)
   return (
     <main className="flex-1 overflow-x-hidden">
       <HeroSection />

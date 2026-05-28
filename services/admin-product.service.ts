@@ -40,7 +40,10 @@ function buildProductBaseValues(payload: AdminProductPayload) {
     description: variant.description ?? payload.description ?? null,
     basePrice: toPaise(variant.price ?? payload.price),
     strikeThroughPrice: toPaise(
-      variant.strikethroughPrice ?? payload.strikethroughPrice,
+      variant.strikeThroughPrice ??
+        variant.strikethroughPrice ??
+        payload.strikeThroughPrice ??
+        payload.strikethroughPrice,
     ),
     status: payload.status ?? 'active',
     isFeatured: Boolean(payload.isFeatured),
@@ -51,6 +54,11 @@ export async function getProductsService(query: AdminProductQuery = {}) {
   const { rows, page, pageSize, totalItems } = await findProductsPage(query)
   const items = rows.map((item) => ({
     ...item,
+    image: item.imageKey
+      ? getS3ObjectPreviewUrl(item.imageKey)
+      : item.variantBannerImage
+        ? getS3ObjectPreviewUrl(item.variantBannerImage)
+        : '',
     strikethroughPrice: item.strikeThroughPrice,
     isCancelable: true,
     isReturnable: true,

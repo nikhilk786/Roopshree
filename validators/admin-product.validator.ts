@@ -48,6 +48,52 @@ export function getPrimaryAdminProductVariant(payload: AdminProductPayload) {
   return payload.variants ?? payload.variant ?? payload
 }
 
+function hasValue(value: unknown) {
+  return value !== undefined && value !== null && String(value).trim() !== ''
+}
+
+function validateStrikeThroughPrice({
+  price,
+  strikeThroughPrice,
+  label,
+}: {
+  price: unknown
+  strikeThroughPrice: unknown
+  label: string
+}) {
+  if (!hasValue(strikeThroughPrice)) return
+
+  const priceValue = Number(price)
+  const strikeValue = Number(strikeThroughPrice)
+
+  if (!Number.isFinite(priceValue) || !Number.isFinite(strikeValue)) {
+    throw new Error(`${label} price must be a valid number`)
+  }
+
+  if (strikeValue <= priceValue) {
+    throw new Error(`${label} strike-through price must be greater than price`)
+  }
+}
+
+function validateAdminProductPrices(payload: AdminProductPayload) {
+  validateStrikeThroughPrice({
+    price: payload.price,
+    strikeThroughPrice: payload.strikeThroughPrice ?? payload.strikethroughPrice,
+    label: 'Product',
+  })
+
+  if (!Array.isArray(payload.variants)) return
+
+  payload.variants.forEach((variant: AdminProductPayload, index: number) => {
+    validateStrikeThroughPrice({
+      price: variant.price,
+      strikeThroughPrice:
+        variant.strikeThroughPrice ?? variant.strikethroughPrice,
+      label: `Variant ${index + 1}`,
+    })
+  })
+}
+
 export function validateAdminProductCreateInput(
   input: AdminProductPayload | FormData,
 ) {
@@ -58,6 +104,8 @@ export function validateAdminProductCreateInput(
   if (!name) {
     throw new Error('Product name is required')
   }
+
+  validateAdminProductPrices(parsed.payload)
 
   return parsed
 }
@@ -85,6 +133,8 @@ export function validateAdminProductUpdateInput(
   if (!name) {
     throw new Error('Product name is required')
   }
+
+  validateAdminProductPrices(parsed.payload)
 
   return {
     ...parsed,

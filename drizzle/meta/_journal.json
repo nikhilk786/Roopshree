@@ -15,6 +15,13 @@
       "when": 1779875451504,
       "tag": "0001_faithful_mantis",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779951422281,
+      "tag": "0002_nappy_scarecrow",
+      "breakpoints": true
     }
   ]
 }

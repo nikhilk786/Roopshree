@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ export type ProductRow = {
   strikeThroughPrice: number | null;
   status: "draft" | "active" | "archived";
   isFeatured: boolean;
+  image?: string;
   createdAt: Date;
 };
 
@@ -77,7 +79,22 @@ export default function ProductTable({ products }: { products: ProductRow[] }) {
         {products.length ? (
           products.map((product) => (
             <TableRow key={product.id}>
-              <TableCell>{product.name}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <div className="relative size-12 shrink-0 overflow-hidden rounded-md border bg-muted">
+                    {product.image ? (
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                      />
+                    ) : null}
+                  </div>
+                  <span>{product.name}</span>
+                </div>
+              </TableCell>
               <TableCell>{product.sku}</TableCell>
               <TableCell>{formatPrice(product.basePrice)}</TableCell>
               <TableCell>{formatPrice(product.strikeThroughPrice)}</TableCell>
