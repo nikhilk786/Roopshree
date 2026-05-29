@@ -49,11 +49,21 @@ const Footer = () => {
             confidence everywhere.
           </p>
           <div className="mt-5 flex gap-3">
-            <Button aria-label="Instagram" size="icon-sm" variant="ghost">
-              <IconBrandInstagram className="size-6 text-[#C39150]" />
+            <Button
+              aria-label="Instagram"
+              size="icon-sm"
+              variant="ghost"
+              className="bg-[#FEEDD0] hover:bg-[#FEEDD0]"
+            >
+              <IconBrandInstagram className="size-6 text-[#3F2617]/70" />
             </Button>
-            <Button aria-label="Email" size="icon-sm" variant="ghost">
-              <IconMail className="size-6 text-[#C39150]" />
+            <Button
+              aria-label="Email"
+              size="icon-sm"
+              variant="ghost"
+              className="bg-[#FEEDD0] hover:bg-[#FEEDD0]"
+            >
+              <IconMail className="size-6 text-[#3F2617]/70" />
             </Button>
           </div>
         </div>

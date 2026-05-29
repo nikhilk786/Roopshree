@@ -273,7 +273,7 @@ const Header = ({ isAuthenticated = false }: { isAuthenticated?: boolean }) => {
               {cartCount > 0 ? <NavBadge count={cartCount} /> : null}
             </Button>
           </Link>
-          <Link href="/wishlist">
+          <Link href="/dashboard/wishlist">
             <Button
               aria-label={`Wishlist, ${wishlistCount} items`}
               size="icon-sm"

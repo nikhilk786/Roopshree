@@ -20,9 +20,9 @@ export function WishlistPage() {
     <div>
       <DashboardPageTitle>Wishlist</DashboardPageTitle>
       {wishlistProducts.length > 0 ? (
-        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ">
           {wishlistProducts.map((product) => (
-            <article key={product.productId} className="relative min-w-0">
+            <article key={product.productId} className="relative min-w-0 border p-4">
               <Link href="/shop" className="group block">
                 <div className="relative aspect-[0.82] overflow-hidden bg-[#ead8c4]">
                   <Image
