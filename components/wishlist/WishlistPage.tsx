@@ -16,7 +16,7 @@ export function WishlistPage() {
   const { handleRemoveWishlist } = useWishlist()
 
   return (
-    <main className="flex-1 bg-white pb-20 pt-24 md:pt-20">
+    <main className="flex-1 bg-white pb-20 pt-24 md:pt-20 ">
       <section className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         <h1 className="font-heading text-3xl font-semibold text-black">
           Wishlist
