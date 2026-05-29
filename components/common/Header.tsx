@@ -252,13 +252,13 @@ const Header = ({ isAuthenticated = false }: { isAuthenticated?: boolean }) => {
               >
                 <Link href="/auth">Login</Link>
               </Button>
-              <Button
+              {/* <Button
                 asChild
                 size="sm"
                 className="rounded-[4px] bg-[#C39150] px-3 text-white hover:bg-[#3F2617]"
               >
                 <Link href="/auth?view=signup">Sign Up</Link>
-              </Button>
+              </Button> */}
             </div>
           )}
 

@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Camera, Mail } from "lucide-react"
 
+import { FooterNewsletterForm } from "@/components/common/FooterNewsletterForm"
 import { Button } from "@/components/ui/button"
 
 const quickLinks = ["Home", "About", "Shop", "Contact Us", "Enquiry", "Blogs"]
@@ -65,16 +66,7 @@ const Footer = () => {
           <h2 className="mb-5 text-xl font-medium text-[#3F2617]">
             Newsletter Subscription
           </h2>
-          <form className="space-y-3">
-            <input
-              type="email"
-              placeholder="Enter your Email"
-              className="h-11 w-full border border-[#C39150] bg-white/45 px-4 text-sm outline-none placeholder:text-[#3F2617]/60 focus:border-[#3F2617]"
-            />
-            <Button className="h-11 w-full rounded-none bg-[#3F2617] text-white hover:bg-[#C39150]">
-              Submit
-            </Button>
-          </form>
+          <FooterNewsletterForm />
           <p className="mt-5 text-sm leading-6 text-[#3F2617]/70">
             Your feedback helps us grow. Share your thoughts and suggestions
             with us anytime.
